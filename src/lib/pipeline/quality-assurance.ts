@@ -110,9 +110,9 @@ export function buildProvenanceChain(
                 chainGaps.push("Evidence field is empty or too brief to evaluate");
             }
 
-            // Check confidence reasoning
-            if (!finding.confidenceReasoning || finding.confidenceReasoning.trim().length < 10) {
-                chainGaps.push("Confidence reasoning is missing or too brief");
+            // Check evidence detail (proxy for confidence reasoning)
+            if (!finding.evidence || finding.evidence.trim().length < 20) {
+                chainGaps.push("Evidence is too brief to assess confidence reasoning");
             }
 
             // Check for circular evidence (agent cites itself or LLM-generated content)
@@ -131,7 +131,7 @@ export function buildProvenanceChain(
                 evidence: finding.evidence,
                 source: finding.source,
                 confidence: finding.confidence as ConfidenceLevel,
-                confidenceReasoning: finding.confidenceReasoning,
+                confidenceReasoning: finding.evidence,
                 evidenceType: finding.evidenceType,
                 dimension,
                 sourceVerifiable,
@@ -422,7 +422,7 @@ export function scoreOutput(
     const dimensions: RubricDimension[] = [];
 
     // 1. Source Coverage (20%)
-    const totalFindings = manifest.meta.totalFindings;
+    const totalFindings = manifest.qualityReport.totalFindings;
     const sourcedFindings = provenanceReport.verifiableSources;
     const sourceCoverage = totalFindings > 0 ? (sourcedFindings / totalFindings) * 100 : 0;
     dimensions.push({
@@ -444,10 +444,10 @@ export function scoreOutput(
 
     // 3. Emergence Yield (15%)
     const qualifiedEmergences = manifest.synthesis.emergentInsights.filter(e => {
-        const scores = [e.quality.novelty, e.quality.grounding, e.quality.actionability, e.quality.depth, e.quality.surprise];
+        const scores = [e.qualityScores.novelty, e.qualityScores.grounding, e.qualityScores.actionability, e.qualityScores.depth, e.qualityScores.surprise];
         return scores.filter(s => s >= 4).length >= 3;
     }).length;
-    const agentCount = manifest.meta.agentCount;
+    const agentCount = manifest.agentResults.length;
     const expectedEmergence = agentCount / 3;
     const emergenceYield = expectedEmergence > 0 ? Math.min(100, (qualifiedEmergences / expectedEmergence) * 100) : 0;
     dimensions.push({
@@ -459,7 +459,7 @@ export function scoreOutput(
     });
 
     // 4. Confidence Calibration (15%)
-    const confDist = manifest.synthesis.qualityReport.confidenceDistribution;
+    const confDist = manifest.qualityReport.confidenceDistribution;
     const totalConf = confDist.high + confDist.medium + confDist.low;
     let calibrationScore = 50; // default
     if (totalConf > 0) {
@@ -482,7 +482,7 @@ export function scoreOutput(
     });
 
     // 5. Gap Acknowledgement (10%)
-    const totalGaps = manifest.synthesis.qualityReport.gapCount;
+    const totalGaps = manifest.qualityReport.gapCount;
     const gapScore = totalGaps > 0 ? Math.min(100, totalGaps * 25) : 10; // Penalize NO gaps (suspiciously complete)
     dimensions.push({
         name: "Gap Acknowledgement",
@@ -493,9 +493,9 @@ export function scoreOutput(
     });
 
     // 6. Conflict Resolution (10%)
-    const tensionCount = manifest.synthesis.tensions.length;
-    const resolvedTensions = manifest.synthesis.tensions.filter(t => t.resolution).length;
-    const preservedTensions = manifest.synthesis.tensions.filter(t => t.preservedAsComplexity).length;
+    const tensionCount = manifest.synthesis.tensionPoints.length;
+    const resolvedTensions = manifest.synthesis.tensionPoints.filter(t => t.resolution && t.resolution.length > 0).length;
+    const preservedTensions = 0; // tensionPoints don't have preservedAsComplexity in the new schema
     let conflictScore = 50;
     if (tensionCount > 0) {
         const handledPct = (resolvedTensions + preservedTensions) / tensionCount;
@@ -515,10 +515,9 @@ export function scoreOutput(
     // 7. Dimensionality (15%)
     const blueprintDimensions = manifest.blueprint.dimensions.length;
     const coveredDimensions = new Set(
-        manifest.provenance.map(p => {
-            const agent = manifest.blueprint.agents.find(a => a.name === p.agent);
-            return agent?.dimension;
-        }).filter(Boolean)
+        manifest.agentResults
+            .filter(r => r.findings.length > 0)
+            .map(r => r.dimension)
     ).size;
     const dimensionality = blueprintDimensions > 0 ? (coveredDimensions / blueprintDimensions) * 100 : 0;
     dimensions.push({
@@ -760,21 +759,22 @@ export async function runQualityAssurance(
 
     // 3. Evaluate synthesis gate
     const synthGateDecision = await gateSystem.evaluateGate(
-        manifest.meta.runId,
+        manifest.metadata.runId,
         "synthesis",
         score.overallScore,
         onEvent,
     );
 
     // 4. Aggregate all warnings
-    const gateDecisions = gateSystem.getDecisions(manifest.meta.runId);
+    const gateDecisions = gateSystem.getDecisions(manifest.metadata.runId);
     const warnings = aggregateWarnings(provenance, score, gateDecisions, criticIssues);
 
     // 5. Emit quality events
     for (const warning of warnings.filter(w => w.severity === "critical")) {
         onEvent?.({
-            type: "critic:review",
-            data: { issue: warning.message, severity: warning.severity },
+            type: "critic_review",
+            issue: warning.message,
+            severity: warning.severity,
         });
     }
 

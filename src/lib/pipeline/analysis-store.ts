@@ -157,8 +157,8 @@ export class AnalysisStore {
             status: "complete",
             phase: "COMPLETE",
             completedAt: new Date().toISOString(),
-            findingsCount: manifest.meta.totalFindings,
-            emergenceCount: manifest.meta.emergentInsights,
+            findingsCount: manifest.qualityReport.totalFindings,
+            emergenceCount: manifest.synthesis.emergentInsights.length,
         });
 
         // Cache the result

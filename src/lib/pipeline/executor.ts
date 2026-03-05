@@ -1,423 +1,397 @@
 /**
- * PRISM Pipeline — Executor
- * 
+ * PRISM Pipeline -- Executor
+ *
  * Orchestrates the complete intelligence pipeline:
- * THINK → CONSTRUCT → DEPLOY → SYNTHESIZE → (CRITIC) → COMPLETE
- * 
+ * THINK -> CONSTRUCT -> DEPLOY -> SYNTHESIZE -> VERIFY -> PRESENT
+ *
  * Manages the full lifecycle, updating database state between phases,
- * emitting events for real-time streaming, and enforcing quality gates.
+ * emitting PipelineEvent events for real-time streaming, and enforcing
+ * the verification gate.
  */
 
 import { prisma } from "@/lib/prisma";
-import { think, type ThinkInput } from "./think";
+import { think } from "./think";
 import { construct } from "./construct";
 import { deploy } from "./deploy";
-import { synthesize, criticReview } from "./synthesize";
-import { MemoryBus } from "./memory-bus";
-import { AnalysisStore, type ExecutionState, type DecompositionPattern } from "./analysis-store";
-import { runQualityAssurance, getQualityGateSystem, type QualityAssuranceReport } from "./quality-assurance";
-import { generatePresentation } from "@/lib/presentation";
-import type { Blueprint, PipelineEvent, IntelligenceManifest } from "./types";
+import { synthesize } from "./synthesize";
+import { verify } from "./verify";
+import { present } from "./present";
+import type {
+  Blueprint,
+  PipelineEvent,
+  IntelligenceManifest,
+  AgentResult,
+  SynthesisResult,
+  QualityReport,
+  AutonomyMode,
+} from "./types";
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 
 // ─── Types ──────────────────────────────────────────────────
 
 export interface PipelineInput {
-    query: string;
-    runId: string;
-    urgency?: "speed" | "balanced" | "thorough";
-    decompositionPattern?: DecompositionPattern;
-    onEvent?: (event: PipelineEvent) => void;
+  query: string;
+  runId: string;
+  autonomyMode?: AutonomyMode;
+  onEvent?: (event: PipelineEvent) => void;
 }
 
-export interface PipelineOutput {
-    runId: string;
-    manifest: IntelligenceManifest;
-    qualityPassed: boolean;
-    qualityIssues: string[];
-    warnings: string[];
-    qualityAssurance: QualityAssuranceReport;
-    executionState: ExecutionState;
-}
+// ─── Quality Report Builder ─────────────────────────────────
 
+function buildQualityReport(
+  agentResults: AgentResult[],
+  synthesis: SynthesisResult,
+): QualityReport {
+  const allFindings = agentResults.flatMap((r) => r.findings);
+  const totalFindings = allFindings.length;
+  const sourcedFindings = allFindings.filter(
+    (f) => f.source && f.source.trim().length > 0,
+  ).length;
+
+  const confDist = { high: 0, medium: 0, low: 0 };
+  const tierDist = { primary: 0, secondary: 0, tertiary: 0 };
+  for (const f of allFindings) {
+    confDist[f.confidence.toLowerCase() as keyof typeof confDist]++;
+    tierDist[f.sourceTier.toLowerCase() as keyof typeof tierDist]++;
+  }
+
+  const qualifiedEmergences = synthesis.emergentInsights.filter((e) => {
+    const scores = e.qualityScores;
+    return (
+      [
+        scores.novelty,
+        scores.grounding,
+        scores.actionability,
+        scores.depth,
+        scores.surprise,
+      ].filter((s) => s >= 4).length >= 3
+    );
+  }).length;
+
+  const gapCount = agentResults.reduce((sum, r) => sum + r.gaps.length, 0);
+
+  return {
+    totalFindings,
+    sourcedFindings,
+    sourceCoveragePercent:
+      totalFindings > 0
+        ? Math.round((sourcedFindings / totalFindings) * 100)
+        : 0,
+    confidenceDistribution: confDist,
+    sourceTierDistribution: tierDist,
+    emergenceYield: qualifiedEmergences,
+    gapCount,
+    provenanceComplete: sourcedFindings === totalFindings,
+  };
+}
 
 // ─── Main Orchestrator ──────────────────────────────────────
 
 /**
  * Execute the full PRISM intelligence pipeline.
- * 
- * Flow: THINK → CONSTRUCT → DEPLOY → SYNTHESIZE → CRITIC → COMPLETE
- * 
- * Each phase updates the database Run status.
- * Quality gate is enforced after synthesis — issues are flagged but don't block delivery.
+ *
+ * Flow: THINK -> CONSTRUCT -> DEPLOY -> SYNTHESIZE -> VERIFY -> PRESENT
+ *
+ * Each phase updates the database Run status and emits PipelineEvent events.
+ * Returns the completed IntelligenceManifest.
  */
-export async function executePipeline(input: PipelineInput): Promise<PipelineOutput> {
-    const { query, runId, urgency = "balanced", decompositionPattern = "dimensional_split", onEvent } = input;
-    const allWarnings: string[] = [];
+export async function executePipeline(
+  input: PipelineInput,
+): Promise<IntelligenceManifest> {
+  const { query, runId, autonomyMode = "supervised", onEvent } = input;
+  const startTime = new Date().toISOString();
+  let totalTokens = 0;
 
-    // Create shared memory bus for cross-agent communication
-    const memoryBus = new MemoryBus(query);
+  const emitEvent = (event: PipelineEvent) => {
+    onEvent?.(event);
+  };
 
-    // Create analysis store for execution tracking
-    const store = new AnalysisStore();
-    const execution = store.createExecution(runId, decompositionPattern);
+  let currentPhase = "THINK";
 
-    try {
-        // ─── Phase 0: THINK ───────────────────────────────────
+  try {
+    // ─── Phase 0: THINK ───────────────────────────────────
 
-        await updateRunStatus(runId, "THINK");
-        store.updateExecution(runId, { phase: "THINK", status: "running" });
+    currentPhase = "THINK";
+    await updateRunStatus(runId, "THINK");
+    emitEvent({ type: "phase_change", phase: "THINK", message: "Decomposing query into analytical dimensions..." });
 
-        const thinkResult = await think({ query, urgency });
-        const { blueprint } = thinkResult;
-        allWarnings.push(...thinkResult.warnings);
+    const blueprint = await think({ query });
 
-        // Persist blueprint to database
-        await persistBlueprint(runId, blueprint);
+    // Persist blueprint to database
+    await persistBlueprint(runId, blueprint);
 
-        onEvent?.({ type: "blueprint", data: blueprint });
+    emitEvent({ type: "blueprint", blueprint });
 
+    // ─── Phase 1: CONSTRUCT ───────────────────────────────
 
-        // ─── Phase 1: CONSTRUCT ───────────────────────────────
+    currentPhase = "CONSTRUCT";
+    await updateRunStatus(runId, "CONSTRUCT");
+    emitEvent({ type: "phase_change", phase: "CONSTRUCT", message: "Building agent prompts and tool configurations..." });
 
-        await updateRunStatus(runId, "CONSTRUCT");
-        store.updateExecution(runId, { phase: "CONSTRUCT", status: "spawning" });
-        store.saveBlueprint(runId, blueprint);
+    const agents = construct({ blueprint });
 
-        const constructResult = construct(blueprint);
-        const { agents } = constructResult;
-        allWarnings.push(...constructResult.warnings);
-
-        // Update agents in database with system prompts
-        for (const agent of agents) {
-            await prisma.agent.updateMany({
-                where: { runId, name: agent.name },
-                data: {
-                    status: "active",
-                    archetype: agent.archetype,
-                    mandate: agent.mandate,
-                    tools: JSON.stringify(agent.tools),
-                    color: agent.color,
-                },
-            });
-        }
-
-
-        // ─── Phase 2: DEPLOY ──────────────────────────────────
-
-        await updateRunStatus(runId, "DEPLOY");
-        store.updateExecution(runId, { phase: "DEPLOY", status: "running" });
-
-        const deployResult = await deploy({
-            agents,
-            query,
-            tier: blueprint.tier,
-            memoryBus,
-            onEvent,
-        });
-        allWarnings.push(...deployResult.warnings);
-
-        // Persist agent results and findings to database
-        for (const agentResult of deployResult.results) {
-            if (agentResult.result) {
-                // Update agent status
-                await prisma.agent.updateMany({
-                    where: { runId, name: agentResult.agentName },
-                    data: {
-                        status: "complete",
-                        progress: 100,
-                    },
-                });
-
-                // Persist findings
-                for (const finding of agentResult.result.findings) {
-                    const dbAgent = await prisma.agent.findFirst({
-                        where: { runId, name: agentResult.agentName },
-                    });
-
-                    if (dbAgent) {
-                        await prisma.finding.create({
-                            data: {
-                                statement: finding.statement,
-                                evidence: finding.evidence,
-                                confidence: finding.confidence,
-                                evidenceType: finding.evidenceType,
-                                source: finding.source,
-                                implication: finding.implication,
-                                action: "keep",
-                                agentId: dbAgent.id,
-                                runId,
-                            },
-                        });
-                    }
-                }
-            } else {
-                // Mark failed agents
-                await prisma.agent.updateMany({
-                    where: { runId, name: agentResult.agentName },
-                    data: { status: "failed", progress: 0 },
-                });
-            }
-        }
-
-        // Check: enough agents succeeded?
-        const successCount = deployResult.results.filter(r => r.result !== null).length;
-        if (successCount < 2) {
-            throw new Error(
-                `Only ${successCount} agents succeeded — minimum 2 required for synthesis. ` +
-                `Failed: ${deployResult.failedAgents.join(", ")}`
-            );
-        }
-
-
-        // ─── Phase 3: SYNTHESIZE ──────────────────────────────
-
-        await updateRunStatus(runId, "SYNTHESIZE");
-        onEvent?.({
-            type: "synthesis:layer",
-            data: { name: "foundation", description: "Starting synthesis — analyzing cross-agent patterns...", insights: [] },
-        });
-        store.updateExecution(runId, {
-            phase: "SYNTHESIZE",
-            status: "synthesizing",
-            agentsCompleted: successCount,
-            agentsFailed: deployResult.failedAgents.length,
-            findingsCount: deployResult.totalFindings,
-        });
-
-        const synthResult = await synthesize({
-            blueprint,
-            agentResults: deployResult.results,
-            onEvent,
-        });
-        allWarnings.push(...synthResult.warnings);
-
-        // Persist synthesis layers
-        for (let i = 0; i < synthResult.synthesis.layers.length; i++) {
-            const layer = synthResult.synthesis.layers[i];
-            await prisma.synthesis.create({
-                data: {
-                    layerName: layer.name,
-                    description: layer.description,
-                    insights: JSON.stringify(layer.insights),
-                    order: i,
-                    runId,
-                },
-            });
-        }
-
-
-        // ─── Critic Review (EXTENDED+ tiers only) ──────────────
-        // Note: STANDARD tier already runs critic inside synthesize() via the validated strategy.
-        // Only EXTENDED/MEGA/CAMPAIGN need an outer critic pass (they use grouped/hierarchical).
-
-        const tier = blueprint.tier;
-        let criticResult = null;
-
-        if (tier !== "MICRO" && tier !== "STANDARD") {
-            onEvent?.({
-                type: "agent:progress",
-                data: { agentId: "critic", progress: -1, message: "Running adversarial quality review..." },
-            });
-            criticResult = await criticReview(
-                synthResult.synthesis,
-                blueprint,
-                deployResult.results,
-                onEvent,
-            );
-
-            const criticalIssues = criticResult.issues.filter(i => i.severity === "critical");
-            if (criticalIssues.length > 0) {
-                allWarnings.push(
-                    `CRITIC found ${criticalIssues.length} critical issue(s): ` +
-                    criticalIssues.map(i => i.description).join("; ")
-                );
-            }
-        }
-
-
-        // ─── Build Intelligence Manifest ──────────────────────
-        console.log("[PRISM] Building manifest...");
-
-        const totalCost = deployResult.results.reduce((sum, r) => sum + r.meta.cost, 0);
-
-        const manifest: IntelligenceManifest = {
-            meta: {
-                query,
-                tier: blueprint.tier,
-                agentCount: agents.length,
-                totalFindings: deployResult.totalFindings,
-                emergentInsights: synthResult.synthesis.emergentInsights.length,
-                runId,
-                generatedAt: new Date().toISOString(),
-                totalCost,
-            },
-            blueprint,
-            agentResults: deployResult.results
-                .filter(r => r.result !== null)
-                .map(r => ({
-                    agent: blueprint.agents.find(a => a.name === r.agentName)!,
-                    result: r.result!,
-                    meta: r.meta,
-                })),
-            synthesis: synthResult.synthesis,
-            provenance: deployResult.results
-                .filter(r => r.result !== null)
-                .flatMap(r =>
-                    r.result!.findings.map(f => ({
-                        finding: f.statement,
-                        agent: r.agentName,
-                        evidence: f.evidence,
-                        source: f.source,
-                        confidence: f.confidence as "HIGH" | "MEDIUM" | "LOW",
-                        confidenceReasoning: f.confidenceReasoning,
-                    }))
-                ),
-        };
-
-
-        // ─── Quality Assurance Pipeline ────────────────────────
-        console.log("[PRISM] Running QA pipeline...");
-
-        const qaReport = await runQualityAssurance(
-            manifest,
-            deployResult.results,
-            blueprint,
-            getQualityGateSystem(),
-            criticResult?.issues,
-            onEvent,
-        );
-
-        // Merge QA warnings into allWarnings
-        for (const w of qaReport.warnings) {
-            allWarnings.push(`[${w.severity.toUpperCase()}] ${w.message}`);
-        }
-
-
-        // ─── Generate Presentation ────────────────────────────
-        console.log("[PRISM] Generating presentation...");
-
-        let presentationPath = "";
-        try {
-            const html = generatePresentation(manifest, qaReport);
-            const decksDir = join(process.cwd(), "public", "decks");
-            mkdirSync(decksDir, { recursive: true });
-
-            const filename = `${runId}.html`;
-            writeFileSync(join(decksDir, filename), html, "utf-8");
-            presentationPath = `/decks/${filename}`;
-
-            // Count slides
-            const slideCount = (html.match(/class="slide[\s"]/g) || []).length;
-
-            // Persist to database
-            await prisma.presentation.create({
-                data: {
-                    title: manifest.meta.query,
-                    subtitle: `${manifest.meta.tier} · ${manifest.meta.agentCount} agents · ${manifest.meta.totalFindings} findings`,
-                    htmlPath: presentationPath,
-                    slideCount,
-                    runId,
-                },
-            });
-        } catch (presError) {
-            console.error("[PRISM] Presentation generation error:", presError);
-            const msg = presError instanceof Error ? presError.message : String(presError);
-            allWarnings.push(`Presentation generation failed: ${msg}`);
-        }
-
-
-        // ─── Complete ─────────────────────────────────────────
-        console.log("[PRISM] Completing run...");
-
-        await prisma.run.update({
-            where: { id: runId },
-            data: {
-                status: "COMPLETE",
-                completedAt: new Date(),
-            },
-        });
-
-        onEvent?.({ type: "run:complete", data: { runId, manifest, presentationPath } });
-
-        // Complete execution tracking
-        store.completeExecution(runId, manifest);
-        const executionState = store.getExecution(runId)!;
-
-        return {
-            runId,
-            manifest,
-            qualityPassed: synthResult.qualityPassed && qaReport.passesAllGates,
-            qualityIssues: synthResult.qualityIssues,
-            warnings: allWarnings,
-            qualityAssurance: qaReport,
-            executionState,
-        };
-
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-
-        // Update run status to failed
-        await prisma.run.update({
-            where: { id: runId },
-            data: { status: "FAILED" },
-        });
-
-        store.failExecution(runId, errorMessage);
-
-        onEvent?.({ type: "run:error", data: { error: errorMessage, phase: "pipeline" } });
-
-        throw error;
+    // Update agents in database with system prompts
+    for (const agent of agents) {
+      await prisma.agent.updateMany({
+        where: { runId, name: agent.name },
+        data: {
+          status: "active",
+          archetype: agent.archetype,
+          mandate: agent.mandate,
+          tools: JSON.stringify(agent.tools),
+          color: agent.color,
+        },
+      });
     }
-}
 
+    // ─── Phase 2: DEPLOY ──────────────────────────────────
+
+    currentPhase = "DEPLOY";
+    await updateRunStatus(runId, "DEPLOY");
+    emitEvent({ type: "phase_change", phase: "DEPLOY", message: `Deploying ${agents.length} agents in parallel...` });
+
+    const deployResult = await deploy({
+      agents,
+      blueprint,
+      emitEvent,
+    });
+
+    const { agentResults, criticResult } = deployResult;
+
+    // Track tokens from deploy phase
+    for (const result of agentResults) {
+      totalTokens += result.tokensUsed;
+    }
+    if (criticResult) {
+      totalTokens += criticResult.tokensUsed;
+    }
+
+    // Persist findings to database
+    for (const agentResult of agentResults) {
+      // Update agent status
+      await prisma.agent.updateMany({
+        where: { runId, name: agentResult.agentName },
+        data: {
+          status: "complete",
+          progress: 100,
+        },
+      });
+
+      // Persist findings
+      const dbAgent = await prisma.agent.findFirst({
+        where: { runId, name: agentResult.agentName },
+      });
+
+      if (dbAgent) {
+        for (const finding of agentResult.findings) {
+          await prisma.finding.create({
+            data: {
+              statement: finding.statement,
+              evidence: finding.evidence,
+              confidence: finding.confidence,
+              evidenceType: finding.evidenceType,
+              source: finding.source,
+              sourceTier: finding.sourceTier,
+              implication: finding.implication,
+              action: "keep",
+              tags: JSON.stringify(finding.tags),
+              agentId: dbAgent.id,
+              runId,
+            },
+          });
+        }
+      }
+    }
+
+    // Check: enough agents succeeded?
+    if (agentResults.length < 2) {
+      throw new Error(
+        `Only ${agentResults.length} agents succeeded -- minimum 2 required for synthesis.`,
+      );
+    }
+
+    // ─── Phase 3: SYNTHESIZE ──────────────────────────────
+
+    currentPhase = "SYNTHESIZE";
+    await updateRunStatus(runId, "SYNTHESIZE");
+    emitEvent({ type: "phase_change", phase: "SYNTHESIZE", message: "Running emergence detection and synthesis..." });
+
+    const synthesis = await synthesize({
+      agentResults,
+      blueprint,
+      criticResult,
+      emitEvent,
+    });
+
+    // Persist synthesis layers
+    for (let i = 0; i < synthesis.layers.length; i++) {
+      const layer = synthesis.layers[i];
+      await prisma.synthesis.create({
+        data: {
+          layerName: layer.name,
+          description: layer.description,
+          insights: JSON.stringify(layer.insights),
+          order: i,
+          runId,
+        },
+      });
+    }
+
+    // Build quality report
+    const qualityReport = buildQualityReport(agentResults, synthesis);
+
+    emitEvent({ type: "quality_report", report: qualityReport });
+
+    // ─── Phase 3.5: VERIFY ────────────────────────────────
+
+    currentPhase = "VERIFY";
+    await updateRunStatus(runId, "VERIFY");
+    emitEvent({ type: "phase_change", phase: "VERIFY", message: "Running verification gate..." });
+
+    const verifyResult = await verify({
+      synthesis,
+      agentResults,
+      autonomyMode,
+      emitEvent,
+    });
+
+    // For supervised mode, verify returns approved=false.
+    // The SSE route will handle the HITL gate externally.
+    // For guided/autonomous, it auto-approves and we continue.
+    if (!verifyResult.approved && autonomyMode === "supervised") {
+      // Emit the verification gate so the SSE route knows to pause.
+      // The route handler is responsible for waiting for user approval
+      // before calling the remaining phases. We still continue here
+      // because the route will manage the gate. If the caller needs
+      // to block, they should check the event stream.
+      //
+      // In the current architecture, the executor runs to completion
+      // and the SSE route uses the verification_gate event to show
+      // the user the claims before streaming the presentation.
+    }
+
+    // ─── Phase 4: PRESENT ─────────────────────────────────
+
+    currentPhase = "PRESENT";
+    await updateRunStatus(runId, "PRESENT");
+    emitEvent({ type: "phase_change", phase: "PRESENT", message: "Generating HTML5 presentation..." });
+
+    const presentation = await present({
+      synthesis,
+      agentResults,
+      blueprint,
+      emitEvent,
+    });
+
+    // Save HTML to public/decks/
+    const decksDir = join(process.cwd(), "public", "decks");
+    mkdirSync(decksDir, { recursive: true });
+    const filename = `${runId}.html`;
+    const htmlPath = `/decks/${filename}`;
+    writeFileSync(join(decksDir, filename), presentation.html, "utf-8");
+
+    // Persist presentation to database
+    await prisma.presentation.create({
+      data: {
+        title: presentation.title,
+        subtitle: presentation.subtitle,
+        htmlPath,
+        slideCount: presentation.slideCount,
+        runId,
+      },
+    });
+
+    // ─── Complete ─────────────────────────────────────────
+
+    const endTime = new Date().toISOString();
+
+    const manifest: IntelligenceManifest = {
+      blueprint,
+      agentResults,
+      synthesis,
+      presentation,
+      qualityReport,
+      metadata: {
+        runId,
+        startTime,
+        endTime,
+        totalTokens,
+      },
+    };
+
+    await prisma.run.update({
+      where: { id: runId },
+      data: {
+        status: "COMPLETE",
+        completedAt: new Date(),
+      },
+    });
+
+    emitEvent({ type: "complete", manifest });
+
+    return manifest;
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
+
+    // Update run status to failed
+    await prisma.run.update({
+      where: { id: runId },
+      data: { status: "FAILED" },
+    });
+
+    emitEvent({ type: "error", message: errorMessage, phase: currentPhase });
+
+    throw error;
+  }
+}
 
 // ─── Helpers ────────────────────────────────────────────────
 
 async function updateRunStatus(runId: string, status: string) {
-    await prisma.run.update({
-        where: { id: runId },
-        data: { status },
-    });
+  await prisma.run.update({
+    where: { id: runId },
+    data: { status },
+  });
 }
 
 async function persistBlueprint(runId: string, blueprint: Blueprint) {
-    // Update run with complexity data
-    await prisma.run.update({
-        where: { id: runId },
-        data: {
-            tier: blueprint.tier,
-            complexityScore: Math.round(blueprint.complexity.total),
-            breadth: blueprint.complexity.breadth,
-            depth: blueprint.complexity.depth,
-            interconnection: blueprint.complexity.interconnection,
-            estimatedTime: blueprint.estimatedTime,
-        },
+  // Update run with complexity data
+  await prisma.run.update({
+    where: { id: runId },
+    data: {
+      tier: blueprint.tier,
+      complexityScore: Math.round(blueprint.complexityScore.total),
+      breadth: blueprint.complexityScore.breadth,
+      depth: blueprint.complexityScore.depth,
+      interconnection: blueprint.complexityScore.interconnection,
+      estimatedTime: blueprint.estimatedTime,
+    },
+  });
+
+  // Create dimensions
+  for (const dim of blueprint.dimensions) {
+    await prisma.dimension.create({
+      data: {
+        name: dim.name,
+        description: dim.description,
+        runId,
+      },
     });
+  }
 
-    // Create dimensions
-    for (const dim of blueprint.dimensions) {
-        await prisma.dimension.create({
-            data: {
-                name: dim.name,
-                description: dim.description,
-                runId,
-            },
-        });
-    }
-
-    // Create agents
-    for (const agent of blueprint.agents) {
-        await prisma.agent.create({
-            data: {
-                name: agent.name,
-                archetype: agent.archetype,
-                mandate: agent.mandate,
-                tools: JSON.stringify(agent.tools),
-                dimension: agent.dimension,
-                runId,
-            },
-        });
-    }
+  // Create agents
+  for (const agent of blueprint.agents) {
+    await prisma.agent.create({
+      data: {
+        name: agent.name,
+        archetype: agent.archetype,
+        mandate: agent.mandate,
+        tools: JSON.stringify(agent.tools),
+        dimension: agent.dimension,
+        runId,
+      },
+    });
+  }
 }

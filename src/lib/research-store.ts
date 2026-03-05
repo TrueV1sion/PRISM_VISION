@@ -81,28 +81,29 @@ export class ResearchStore {
         const id = `brief-${Date.now()}-${Math.random().toString(36).substring(7)}`;
         const now = new Date().toISOString();
 
-        // Calculate duration from agent metadata
-        const agentDurations = manifest.agentResults.map(r => r.meta.durationMs);
-        const totalDuration = agentDurations.reduce((sum, d) => sum + d, 0);
+        // Calculate duration from metadata
+        const startMs = new Date(manifest.metadata.startTime).getTime();
+        const endMs = new Date(manifest.metadata.endTime).getTime();
+        const totalDuration = endMs - startMs;
 
         // Auto-generate title from query
-        const title = options?.title ?? generateTitle(manifest.meta.query);
+        const title = options?.title ?? generateTitle(manifest.blueprint.query);
 
         const brief: ResearchBrief = {
             id,
-            runId: manifest.meta.runId,
+            runId: manifest.metadata.runId,
             title,
-            query: manifest.meta.query,
+            query: manifest.blueprint.query,
             status: "published",
             createdAt: now,
             updatedAt: now,
             publishedAt: now,
             summary: {
-                tier: manifest.meta.tier,
-                agentCount: manifest.meta.agentCount,
-                totalFindings: manifest.meta.totalFindings,
-                emergentInsights: manifest.meta.emergentInsights,
-                totalCost: manifest.meta.totalCost,
+                tier: manifest.blueprint.tier,
+                agentCount: manifest.agentResults.length,
+                totalFindings: manifest.qualityReport.totalFindings,
+                emergentInsights: manifest.synthesis.emergentInsights.length,
+                totalCost: 0,
                 durationMs: totalDuration,
             },
             quality: {
@@ -275,7 +276,7 @@ function autoTag(manifest: IntelligenceManifest): string[] {
     const tags: string[] = [];
 
     // Tag by tier
-    tags.push(manifest.meta.tier.toLowerCase());
+    tags.push(manifest.blueprint.tier.toLowerCase());
 
     // Tag by dimension names
     for (const dim of manifest.blueprint.dimensions) {
@@ -284,7 +285,7 @@ function autoTag(manifest: IntelligenceManifest): string[] {
     }
 
     // Tag by quality grade
-    const qualityReport = manifest.synthesis.qualityReport;
+    const qualityReport = manifest.qualityReport;
     if (qualityReport.sourceCoveragePercent > 80) tags.push("well-sourced");
     if (qualityReport.emergenceYield > 1) tags.push("high-emergence");
 
