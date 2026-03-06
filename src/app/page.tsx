@@ -55,6 +55,7 @@ import BlueprintApproval from "@/components/BlueprintApproval";
 import DeckLibrary from "@/components/DeckLibrary";
 import DeckViewer from "@/components/DeckViewer";
 import AdminSettings from "@/components/AdminSettings";
+import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -65,8 +66,20 @@ export default function Home() {
   const [liveAgents, setLiveAgents] = useState<AgentRunState[]>([]);
   const [liveLogs, setLiveLogs] = useState<LogEntry[]>([]);
   const [liveFindings, setLiveFindings] = useState<Finding[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
 
   const stream = useResearchStream();
+
+  useEffect(() => {
+    fetch("/api/onboarding/status")
+      .then((r) => r.json())
+      .then((data) => {
+        setShowOnboarding(!data.onboardingDismissed);
+        setOnboardingChecked(true);
+      })
+      .catch(() => setOnboardingChecked(true));
+  }, []);
 
   // ─── Start live analysis ──────────────────────────
   const handleSubmitLive = useCallback((e: React.FormEvent) => {
@@ -217,6 +230,15 @@ export default function Home() {
                   stream.phase === "error" ? "complete" :
                     phase
   ) : phase;
+
+  // ─── Onboarding Gate ─────────────────────────────────
+  if (!onboardingChecked) return null;
+
+  if (showOnboarding) {
+    return (
+      <OnboardingWizard onComplete={() => setShowOnboarding(false)} />
+    );
+  }
 
   // ─── Phase Routing ─────────────────────────────────
   if (effectivePhase === "input") {
