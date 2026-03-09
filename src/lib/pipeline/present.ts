@@ -14,7 +14,7 @@
  * - Sonnet model (MODELS.PRESENT) for fast, high-quality HTML generation
  * - Prompt caching for the presentation system spec (avoids re-parsing
  *   on repeat runs)
- * - max_tokens: 16000 (presentations are 700-1200 lines of HTML)
+ * - max_tokens: 24000 (presentations are 700-1500+ lines of HTML)
  * - No tools — pure text generation
  */
 
@@ -385,7 +385,7 @@ export async function present(input: PresentInput): Promise<PresentationResult> 
 
   const response = await client.messages.create({
     model: MODELS.PRESENT,
-    max_tokens: 16000,
+    max_tokens: 24000,
     system: [cachedSystemPrompt(presentationSpec)],
     messages: [{ role: "user", content: userPrompt }],
     stream: true,
