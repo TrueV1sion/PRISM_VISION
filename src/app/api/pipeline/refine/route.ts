@@ -11,6 +11,11 @@ import { prisma } from "@/lib/prisma";
 import { refine } from "@/lib/pipeline/refine";
 import type { IntelligenceManifest, PipelineEvent } from "@/lib/pipeline/types";
 
+function safeParseJson<T>(json: string | null, fallback: T): T {
+  try { return JSON.parse(json ?? "null") ?? fallback; }
+  catch { return fallback; }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -60,7 +65,7 @@ export async function POST(request: Request) {
           archetype: a.archetype ?? "",
           dimension: a.dimension ?? "",
           mandate: a.mandate ?? "",
-          tools: JSON.parse(a.tools ?? "[]"),
+          tools: safeParseJson<string[]>(a.tools, []),
           lens: "",
           bias: "",
         })),
@@ -90,19 +95,19 @@ export async function POST(request: Request) {
           evidenceType: (f.evidenceType as "direct" | "inferred" | "analogical" | "modeled") ?? "inferred",
           source: f.source ?? "",
           implication: f.implication ?? "",
-          tags: JSON.parse(f.tags ?? "[]"),
+          tags: safeParseJson<string[]>(f.tags, []),
         })),
         gaps: [],
         signals: [],
         minorityViews: [],
-        toolsUsed: JSON.parse(a.tools ?? "[]"),
+        toolsUsed: safeParseJson<string[]>(a.tools, []),
         tokensUsed: 0,
       })),
       synthesis: {
         layers: run.synthesis.map((s) => ({
           name: s.layerName as "foundation" | "convergence" | "tension" | "emergence" | "gap",
           description: s.description,
-          insights: JSON.parse(s.insights),
+          insights: safeParseJson<string[]>(s.insights, []),
         })),
         emergentInsights: [],
         tensionPoints: [],

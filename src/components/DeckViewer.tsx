@@ -191,7 +191,7 @@ export default function DeckViewer({ deck, onClose }: DeckViewerProps) {
                             src={`/decks/${deck.filename}`}
                             className="w-full h-full border-0"
                             title={deck.title}
-                            sandbox="allow-scripts allow-same-origin"
+                            sandbox="allow-scripts"
                         />
                     </div>
 

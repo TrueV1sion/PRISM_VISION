@@ -28,7 +28,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
     fallbackModel: "gpt-4o",
     temperature: 0.3,
     maxTokens: 8192,
-    blueprintGateEnabled: false,
+    blueprintGateEnabled: true,
     blueprintAutoApproveThreshold: 70,
     findingsGateEnabled: true,
     findingsAutoApproveThreshold: 60,

@@ -72,15 +72,19 @@ export function useCoachMarkPhase() {
 
 export default function CoachMarkProvider({
   children,
+  hasCompletedTour: initialTourComplete,
 }: {
   children: ReactNode;
+  hasCompletedTour?: boolean;
 }) {
   const [currentPhase, setCurrentPhase] = useState<Phase>("input");
-  const [tourActive, setTourActive] = useState(false);
+  const [tourActive, setTourActive] = useState(initialTourComplete === false);
   const [shownMarks, setShownMarks] = useState<Set<string>>(new Set());
-  const [tourComplete, setTourComplete] = useState(false);
+  const [tourComplete, setTourComplete] = useState(initialTourComplete ?? false);
 
   useEffect(() => {
+    // Skip fetch if status was provided via props
+    if (initialTourComplete !== undefined) return;
     fetch("/api/onboarding/status")
       .then((r) => r.json())
       .then((data) => {
@@ -91,7 +95,7 @@ export default function CoachMarkProvider({
         }
       })
       .catch(() => {});
-  }, []);
+  }, [initialTourComplete]);
 
   const completeTour = useCallback(async () => {
     setTourActive(false);

@@ -13,6 +13,11 @@ import type { PipelineEvent } from "@/lib/pipeline/types";
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 
+function safeParseJson<T>(json: string | null, fallback: T): T {
+  try { return JSON.parse(json ?? "null") ?? fallback; }
+  catch { return fallback; }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -52,7 +57,7 @@ export async function POST(request: Request) {
         archetype: a.archetype ?? "",
         dimension: a.dimension ?? "",
         mandate: a.mandate ?? "",
-        tools: JSON.parse(a.tools ?? "[]") as string[],
+        tools: safeParseJson<string[]>(a.tools, []),
         lens: "",
         bias: "",
       })),
@@ -83,12 +88,12 @@ export async function POST(request: Request) {
         evidenceType: (f.evidenceType ?? "inferred") as "direct" | "inferred" | "analogical" | "modeled",
         source: f.source ?? "",
         implication: f.implication ?? "",
-        tags: JSON.parse(f.tags ?? "[]") as string[],
+        tags: safeParseJson<string[]>(f.tags, []),
       })),
       gaps: [] as string[],
       signals: [] as string[],
       minorityViews: [] as string[],
-      toolsUsed: JSON.parse(a.tools ?? "[]") as string[],
+      toolsUsed: safeParseJson<string[]>(a.tools, []),
       tokensUsed: 0,
     }));
 
@@ -96,7 +101,7 @@ export async function POST(request: Request) {
       layers: run.synthesis.map((s) => ({
         name: s.layerName as "foundation" | "convergence" | "tension" | "emergence" | "gap",
         description: s.description,
-        insights: JSON.parse(s.insights) as string[],
+        insights: safeParseJson<string[]>(s.insights, []),
       })),
       emergentInsights: [] as never[],
       tensionPoints: [] as never[],

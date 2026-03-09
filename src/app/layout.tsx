@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ReactNode } from 'react';
+import Link from 'next/link';
 import { Activity, Layers, Clock } from 'lucide-react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -40,10 +41,10 @@ export default function RootLayout({
           </div>
 
           <nav className="flex items-center gap-6">
-            <a href="/history" className="flex items-center gap-1.5 text-sm text-prism-muted hover:text-white transition-colors">
+            <Link href="/history" className="flex items-center gap-1.5 text-sm text-prism-muted hover:text-white transition-colors">
               <Clock className="w-3.5 h-3.5" />
               <span className="hidden md:inline">History</span>
-            </a>
+            </Link>
             <div className="flex items-center gap-2 text-sm text-prism-muted">
               <Activity className="w-4 h-4 text-prism-jade" />
               <span>System Online</span>

@@ -197,6 +197,11 @@ export default function HistoryPage() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: i * 0.05 }}
+                                    onClick={() => {
+                                        if (run.presentation) {
+                                            window.open(run.presentation.htmlPath, "_blank");
+                                        }
+                                    }}
                                     className="glass-panel rounded-xl p-5 border border-white/5 hover:border-prism-sky/10 transition-all cursor-pointer group"
                                 >
                                     <div className="flex items-start justify-between gap-4">

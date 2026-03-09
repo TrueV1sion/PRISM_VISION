@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { readFileSync } from "fs";
-import { join } from "path";
+import { resolve, sep } from "path";
 
 export async function GET(
     _req: NextRequest,
@@ -28,7 +28,14 @@ export async function GET(
     }
 
     try {
-        const filePath = join(process.cwd(), "public", presentation.htmlPath);
+        const decksDir = resolve(process.cwd(), "public", "decks");
+        const filePath = resolve(process.cwd(), "public", presentation.htmlPath);
+        if (!filePath.startsWith(decksDir + sep)) {
+            return NextResponse.json(
+                { error: "Forbidden" },
+                { status: 403 },
+            );
+        }
         const html = readFileSync(filePath, "utf-8");
 
         return new NextResponse(html, {

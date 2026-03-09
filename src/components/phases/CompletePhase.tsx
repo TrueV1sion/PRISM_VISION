@@ -201,11 +201,11 @@ export default function CompletePhase({
                                 </div>
                                 <p className="text-sm text-white leading-relaxed">{e.insight}</p>
                                 <div className="flex items-center gap-4 mt-3 text-[10px] font-mono text-prism-muted">
-                                    <span>NOV: {e.quality.novelty}/5</span>
-                                    <span>GND: {e.quality.grounding}/5</span>
-                                    <span>ACT: {e.quality.actionability}/5</span>
-                                    <span>DPT: {e.quality.depth}/5</span>
-                                    <span>SRP: {e.quality.surprise}/5</span>
+                                    <span title="Novelty">NOV: {e.quality.novelty}/5</span>
+                                    <span title="Grounding">GND: {e.quality.grounding}/5</span>
+                                    <span title="Actionability">ACT: {e.quality.actionability}/5</span>
+                                    <span title="Depth">DPT: {e.quality.depth}/5</span>
+                                    <span title="Surprise">SRP: {e.quality.surprise}/5</span>
                                 </div>
                             </motion.div>
                         ))}

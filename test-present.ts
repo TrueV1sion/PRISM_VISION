@@ -9,7 +9,7 @@ async function run() {
         const result = await present({
             synthesis: {
                 query: "GLP-1 Impact 2026",
-                layers: [{ name: "Foundation", description: "Uncontested Ground", insights: ["Insight 1"] }],
+                layers: [{ name: "foundation", description: "Uncontested Ground", insights: ["Insight 1"] }],
                 emergentInsights: [],
                 tensionPoints: [],
                 overallConfidence: "MEDIUM",

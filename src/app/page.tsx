@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import type { AgentRunState, LogEntry, Finding, FindingAction, BlueprintData } from "@/lib/types";
-import { DeckMeta, DECK_LIBRARY } from "@/lib/deck-data";
+import type { AgentRunState, LogEntry, Finding, FindingAction, SynthesisLayer } from "@/lib/types";
+import { DeckMeta } from "@/lib/deck-data";
 
-
-import { useResearchStream, type StreamPhase, type StreamFinding } from "@/hooks/use-research-stream";
+import { useResearchStream } from "@/hooks/use-research-stream";
 import { AGENT_COLORS } from "@/lib/constants";
 import type { Phase } from "@/lib/types";
 
@@ -21,6 +20,7 @@ import AdminSettings from "@/components/AdminSettings";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 import CoachMarkProvider, { useCoachMarkPhase } from "@/components/onboarding/CoachMarkProvider";
 import PhaseTransition from "@/components/PhaseTransition";
+import PipelineStepper from "@/components/PipelineStepper";
 
 function PhaseSync({ phase }: { phase: Phase }) {
   const { setCurrentPhase } = useCoachMarkPhase();
@@ -37,6 +37,7 @@ export default function Home() {
   const [blueprintApproved, setBlueprintApproved] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [hasCompletedTour, setHasCompletedTour] = useState<boolean | undefined>(undefined);
 
   const stream = useResearchStream();
 
@@ -45,6 +46,7 @@ export default function Home() {
       .then((r) => r.json())
       .then((data) => {
         setShowOnboarding(!data.onboardingDismissed);
+        setHasCompletedTour(data.hasCompletedTour ?? false);
         setOnboardingChecked(true);
       })
       .catch(() => setOnboardingChecked(true));
@@ -55,7 +57,7 @@ export default function Home() {
     e.preventDefault();
     if (!query.trim()) return;
 
-    const runId = `run-${Date.now()}`;
+    const runId = crypto.randomUUID();
     setBlueprintApproved(false);
     // Don't set phase here — let the stream drive it
     stream.startStream(query, runId);
@@ -66,8 +68,26 @@ export default function Home() {
       action === "dismiss" ? "reject" :
         action === "boost" ? "approve" :
           "flag";
-    stream.setFindingAction(id, streamAction as any);
+    stream.setFindingAction(id, streamAction as "approve" | "reject" | "flag" | "modify");
   }, [stream]);
+
+  const handleApproveAndSynthesize = useCallback(() => {
+    // Build an actions map from the current findings state
+    const actions: Record<string, string> = {};
+    for (const f of stream.findings) {
+      const uiAction = f.action === "approve" ? "keep" : f.action === "reject" ? "dismiss" : f.action === "flag" ? "flag" : "keep";
+      actions[f.id] = uiAction;
+    }
+    // POST triage decisions to the server so they persist
+    if (stream.runId) {
+      fetch("/api/pipeline/triage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId: stream.runId, actions }),
+      }).catch(console.error);
+    }
+    setPhase("synthesis");
+  }, [stream.findings, stream.runId]);
 
 
 
@@ -76,8 +96,8 @@ export default function Home() {
     id: a.id,
     name: a.name,
     archetype: a.archetype,
-    mandate: `${a.dimension} analysis agent`,
-    tools: [],
+    mandate: stream.blueprint?.agents.find(ba => ba.name === a.name)?.mandate ?? `${a.dimension} analysis agent`,
+    tools: stream.blueprint?.agents.find(ba => ba.name === a.name)?.tools ?? [],
     dimension: a.dimension,
     color: AGENT_COLORS[i % AGENT_COLORS.length],
     status: a.status === "pending" ? "idle" as const : a.status as AgentRunState["status"],
@@ -169,7 +189,7 @@ export default function Home() {
   const activeFindings = streamFindings;
   const triageAgentCount = stream.agents.length;
 
-  const completeSynthesisLayers = stream.synthesisLayers as any;
+  const completeSynthesisLayers = stream.synthesisLayers as SynthesisLayer[];
   const completeFindingCount = stream.findings.length;
   const completeHasError = stream.phase === "error";
 
@@ -192,6 +212,10 @@ export default function Home() {
         }).catch(console.error);
         setBlueprintApproved(true);
       }}
+      onCancel={() => {
+        stream.reset();
+        setPhase("input");
+      }}
     />
   ) : effectivePhase === "executing" ? (
     <ExecutingPhase
@@ -206,7 +230,7 @@ export default function Home() {
       findings={activeFindings}
       agentCount={triageAgentCount}
       onAction={handleFindingAction}
-      onApproveAndSynthesize={() => setPhase("synthesis")}
+      onApproveAndSynthesize={handleApproveAndSynthesize}
     />
   ) : effectivePhase === "synthesis" ? (
     <SynthesisPhase
@@ -214,6 +238,7 @@ export default function Home() {
       emergences={stream.emergences}
       phaseMessage={stream.phaseMessage}
       isLiveMode={true}
+      isComplete={stream.phase === "complete" || stream.phase === "qa"}
     />
   ) : effectivePhase === "complete" ? (
     <CompletePhase
@@ -234,8 +259,7 @@ export default function Home() {
         if (stream.completionData?.presentationPath) {
           window.open(stream.completionData.presentationPath, "_blank");
         } else {
-          setSelectedDeck(DECK_LIBRARY[0]);
-          setPhase("viewer");
+          alert("No presentation was generated for this analysis. Try running a new analysis.");
         }
       }}
       onBrowseLibrary={() => setPhase("library")}
@@ -257,9 +281,12 @@ export default function Home() {
     <AdminSettings onBack={() => setPhase("input")} />
   ) : null;
 
+  const showStepper = ["executing", "blueprint", "triage", "synthesis", "complete"].includes(effectivePhase);
+
   return (
-    <CoachMarkProvider>
+    <CoachMarkProvider hasCompletedTour={hasCompletedTour}>
       <PhaseSync phase={effectivePhase} />
+      {showStepper && <PipelineStepper phase={effectivePhase} streamPhase={stream.phase} />}
       <PhaseTransition phaseKey={effectivePhase}>
         {phaseContent}
       </PhaseTransition>

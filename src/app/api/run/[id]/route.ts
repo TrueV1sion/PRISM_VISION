@@ -33,6 +33,11 @@ export async function GET(
 }
 
 // PATCH /api/run/[id] — Update run status
+const VALID_STATUSES = [
+    "INITIALIZE", "THINK", "CONSTRUCT", "DEPLOY", "SPAWN", "EXECUTE",
+    "MONITOR", "SYNTHESIZE", "VERIFY", "PRESENT", "DELIVER", "COMPLETE", "FAILED", "CANCELLED",
+];
+
 export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -40,13 +45,24 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const run = await prisma.run.update({
-        where: { id },
-        data: {
-            status: body.status,
-            ...(body.status === "DELIVER" ? { completedAt: new Date() } : {}),
-        },
-    });
+    if (!body.status || !VALID_STATUSES.includes(body.status)) {
+        return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    }
 
-    return NextResponse.json({ run });
+    try {
+        const run = await prisma.run.update({
+            where: { id },
+            data: {
+                status: body.status,
+                ...(body.status === "DELIVER" ? { completedAt: new Date() } : {}),
+            },
+        });
+        return NextResponse.json({ run });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes("Record to update not found") || message.includes("P2025")) {
+            return NextResponse.json({ error: "Run not found" }, { status: 404 });
+        }
+        return NextResponse.json({ error: message }, { status: 500 });
+    }
 }

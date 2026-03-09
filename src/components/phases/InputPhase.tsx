@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Send, Zap, Hexagon } from "lucide-react";
+import { Send, Zap, Hexagon, Settings as SettingsIcon } from "lucide-react";
 
 interface InputPhaseProps {
     query: string;
@@ -45,7 +45,7 @@ export default function InputPhase({
                         onClick={onOpenSettings}
                         className="text-xs text-prism-muted/40 hover:text-prism-sky transition-colors mt-2"
                     >
-                        ⚙ Platform Settings
+                        <SettingsIcon className="w-3.5 h-3.5 inline -mt-0.5 mr-1" />Platform Settings
                     </button>
                 </motion.div>
 

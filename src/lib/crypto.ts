@@ -1,15 +1,15 @@
-import { randomBytes, createCipheriv, createDecipheriv } from "crypto";
+import { randomBytes, createCipheriv, createDecipheriv, scryptSync } from "crypto";
 
 const ALGORITHM = "aes-256-gcm";
 
 function getEncryptionKey(): Buffer {
   const secret = process.env.ENCRYPTION_SECRET;
-  if (!secret || secret.length < 32) {
+  if (!secret || secret.length < 16) {
     throw new Error(
-      "ENCRYPTION_SECRET env var must be at least 32 characters"
+      "ENCRYPTION_SECRET env var must be at least 16 characters"
     );
   }
-  return Buffer.from(secret.slice(0, 32), "utf-8");
+  return scryptSync(secret, "prism-kdf-salt-v1", 32);
 }
 
 export function encrypt(plaintext: string): string {

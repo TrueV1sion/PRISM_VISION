@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 // POST /api/seed — Seed the database with demo runs
 // This is a development-only endpoint
 export async function POST() {
+    if (process.env.NODE_ENV === "production") {
+        return NextResponse.json({ error: "Not available in production" }, { status: 403 });
+    }
+
     // Check if already seeded
     const existing = await prisma.run.count();
     if (existing > 0) {

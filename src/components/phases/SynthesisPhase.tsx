@@ -10,6 +10,7 @@ interface SynthesisPhaseProps {
     emergences: StreamEmergence[];
     phaseMessage: string;
     isLiveMode: boolean;
+    isComplete?: boolean;
 }
 
 export default function SynthesisPhase({
@@ -17,6 +18,7 @@ export default function SynthesisPhase({
     emergences,
     phaseMessage,
     isLiveMode,
+    isComplete = false,
 }: SynthesisPhaseProps) {
     const layerNames = isLiveMode
         ? synthesisLayers.map(l => l.name)
@@ -47,8 +49,8 @@ export default function SynthesisPhase({
                 <div data-tour-id="tour-synthesis-layers" className="flex items-center justify-center gap-3 text-xs font-mono text-prism-muted flex-wrap">
                     {layerNames.map((name, i) => (
                         <span key={`${name}-${i}`} className="flex items-center gap-1.5">
-                            <span className={`w-2 h-2 rounded-full ${i === layerNames.length - 1 ? "bg-prism-sky animate-pulse" : "bg-prism-jade"}`} />
-                            {name} {i < layerNames.length - 1 ? "complete" : "..."}
+                            <span className={`w-2 h-2 rounded-full ${i === layerNames.length - 1 && !isComplete ? "bg-prism-sky animate-pulse" : "bg-prism-jade"}`} />
+                            {name} {i < layerNames.length - 1 || isComplete ? "complete" : "..."}
                         </span>
                     ))}
                 </div>

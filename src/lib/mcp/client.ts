@@ -44,15 +44,22 @@ export class MCPManager {
   private servers = new Map<string, ConnectedServer>();
   private unavailableServers: string[] = [];
   private initialized = false;
+  private initPromise: Promise<void> | null = null;
 
   /**
    * Connect to all available MCP servers defined in the config.
    * Unavailable servers are silently tracked — call getUnavailableServers()
    * to see which ones could not be connected.
+   * Uses a singleton promise to prevent concurrent initialization races.
    */
   async initialize(): Promise<void> {
     if (this.initialized) return;
+    if (this.initPromise) return this.initPromise;
+    this.initPromise = this._doInitialize();
+    return this.initPromise;
+  }
 
+  private async _doInitialize(): Promise<void> {
     const entries = Object.entries(MCP_SERVERS);
 
     await Promise.allSettled(
@@ -242,6 +249,7 @@ export class MCPManager {
     this.servers.clear();
     this.unavailableServers = [];
     this.initialized = false;
+    this.initPromise = null;
   }
 }
 

@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { BlueprintData } from "@/lib/types";
-import { Users, Zap, Clock, Layers, ChevronRight, Pencil } from "lucide-react";
+import { Users, Zap, Clock, Layers, ChevronRight, X, Pencil } from "lucide-react";
 
 const tierColors: Record<string, string> = {
     MICRO: "text-prism-muted bg-white/5 border-white/10",
@@ -14,9 +14,11 @@ const tierColors: Record<string, string> = {
 export default function BlueprintApproval({
     blueprint,
     onApprove,
+    onCancel,
 }: {
     blueprint: BlueprintData;
     onApprove: () => void;
+    onCancel?: () => void;
 }) {
     return (
         <motion.div
@@ -154,8 +156,12 @@ export default function BlueprintApproval({
                     transition={{ delay: 0.5 }}
                     className="flex items-center justify-center gap-4 pt-4 pb-8"
                 >
-                    <button className="px-6 py-2.5 rounded-lg text-sm text-prism-muted border border-white/10 hover:border-white/20 hover:text-white transition-colors">
-                        Edit Roster
+                    <button
+                        onClick={onCancel}
+                        className="flex items-center gap-1.5 px-6 py-2.5 rounded-lg text-sm text-prism-muted border border-white/10 hover:border-red-400/30 hover:text-red-400 transition-colors"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                        Cancel Analysis
                     </button>
                     <button
                         onClick={onApprove}
