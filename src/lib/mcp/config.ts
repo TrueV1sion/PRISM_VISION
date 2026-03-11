@@ -16,66 +16,64 @@ import type { ArchetypeFamily } from "@/lib/pipeline/types";
 // ─── Server Config ──────────────────────────────────────────
 
 export interface MCPServerConfig {
-  /** The command to spawn the server process */
-  command: string;
-  /** Arguments to pass to the command */
-  args: string[];
-  /** Environment variables for the spawned process */
-  env?: Record<string, string>;
   /** Human-readable description of what this server provides */
   description: string;
   /**
-   * Whether this server is currently available.
-   * Set to false for servers that require external packages not yet installed.
+   * Whether this server is enabled.
+   * If true, MCPManager will attempt connection at init.
+   * Connection failures degrade gracefully (server marked unavailable at runtime).
    */
   available: boolean;
+  /** Transport type: "sse" for remote HTTP servers, "stdio" for local processes */
+  transport: "sse" | "stdio";
+  // ── SSE transport fields ──
+  /** Env var key holding the server URL (resolved at runtime) */
+  envUrlKey?: string;
+  // ── Stdio transport fields ──
+  /** Command to spawn the server process */
+  command?: string;
+  /** Arguments to pass to the command */
+  args?: string[];
+  /** Environment variables for the spawned process */
+  env?: Record<string, string>;
 }
 
-/**
- * Registry of MCP servers.
- *
- * Servers marked `available: false` are known to the system but cannot yet be
- * connected — they are remote-only MCP integrations or require separate
- * installation. The MCPManager skips unavailable servers at init time and
- * reports them as gaps.
- */
 export const MCP_SERVERS: Record<string, MCPServerConfig> = {
-  // ── Healthcare / Regulatory ──────────────────────────────
   pubmed: {
-    command: "npx",
-    args: ["-y", "@anthropic/mcp-server-pubmed"],
     description: "PubMed article search and retrieval",
-    available: false, // Remote-only Anthropic MCP integration
+    available: true,
+    transport: "sse",
+    envUrlKey: "MCP_PUBMED_URL",
   },
   cms_coverage: {
-    command: "npx",
-    args: ["-y", "@anthropic/mcp-server-cms-coverage"],
     description: "CMS national and local coverage determinations",
-    available: false, // Remote-only Anthropic MCP integration
+    available: true,
+    transport: "sse",
+    envUrlKey: "MCP_CMS_COVERAGE_URL",
   },
   icd10: {
-    command: "npx",
-    args: ["-y", "@anthropic/mcp-server-icd10"],
     description: "ICD-10 code lookup, search, and validation",
-    available: false, // Remote-only Anthropic MCP integration
+    available: true,
+    transport: "sse",
+    envUrlKey: "MCP_ICD10_URL",
   },
   npi_registry: {
-    command: "npx",
-    args: ["-y", "@anthropic/mcp-server-npi"],
     description: "NPI provider registry search and validation",
-    available: false, // Remote-only Anthropic MCP integration
+    available: true,
+    transport: "sse",
+    envUrlKey: "MCP_NPI_REGISTRY_URL",
   },
   clinical_trials: {
-    command: "npx",
-    args: ["-y", "@anthropic/mcp-server-clinical-trials"],
     description: "ClinicalTrials.gov search and analysis",
-    available: false, // Remote-only Anthropic MCP integration
+    available: true,
+    transport: "sse",
+    envUrlKey: "MCP_CLINICAL_TRIALS_URL",
   },
   biorxiv: {
-    command: "npx",
-    args: ["-y", "@anthropic/mcp-server-biorxiv"],
     description: "bioRxiv/medRxiv preprint search and retrieval",
-    available: false, // Remote-only Anthropic MCP integration
+    available: true,
+    transport: "sse",
+    envUrlKey: "MCP_BIORXIV_URL",
   },
 };
 

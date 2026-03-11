@@ -43,15 +43,6 @@ describe("MCP_SERVERS", () => {
   describe("every server has required config fields", () => {
     for (const name of EXPECTED_SERVERS) {
       describe(`${name}`, () => {
-        it("has a command string", () => {
-          expect(typeof MCP_SERVERS[name].command).toBe("string");
-          expect(MCP_SERVERS[name].command.length).toBeGreaterThan(0);
-        });
-
-        it("has an args array", () => {
-          expect(Array.isArray(MCP_SERVERS[name].args)).toBe(true);
-        });
-
         it("has a description string", () => {
           expect(typeof MCP_SERVERS[name].description).toBe("string");
           expect(MCP_SERVERS[name].description.length).toBeGreaterThan(0);
@@ -60,13 +51,17 @@ describe("MCP_SERVERS", () => {
         it("has an available boolean", () => {
           expect(typeof MCP_SERVERS[name].available).toBe("boolean");
         });
+
+        it("has a valid transport type", () => {
+          expect(["sse", "stdio"]).toContain(MCP_SERVERS[name].transport);
+        });
       });
     }
   });
 
-  it("all healthcare servers are currently marked unavailable (remote-only)", () => {
+  it("all healthcare servers are enabled (available: true)", () => {
     for (const name of EXPECTED_SERVERS) {
-      expect(MCP_SERVERS[name].available).toBe(false);
+      expect(MCP_SERVERS[name].available).toBe(true);
     }
   });
 });
