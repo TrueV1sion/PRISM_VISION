@@ -275,6 +275,8 @@ export type PipelineEvent =
   | { type: "memory_conflict"; conflictId: string; claim: string; agents: string[] }
   | { type: "memory_conflict_resolved"; conflictId: string; resolution: string }
   | { type: "memory_snapshot"; phase: string; entries: number; signals: number; openConflicts: number }
+  | { type: "ir_enrichment"; phase: string; entity: string; count: number }
+  | { type: "ir_complete"; runId: string; findingCount: number; emergenceCount: number; tensionCount: number; gapCount: number; qualityGrade?: string }
   | { type: "complete"; manifest: IntelligenceManifest }
   | { type: "error"; message: string; phase?: string }
   | { type: "thinking_token"; token: string };
