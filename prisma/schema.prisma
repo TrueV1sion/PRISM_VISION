@@ -35,6 +35,7 @@ model Run {
   dimensions         Dimension[]
   presentation       Presentation?
   memoryBusSnapshots MemoryBusSnapshot[]
+  irGraph            IrGraph?
 }
 
 // ─── Dimension ───────────────────────────────────────────
@@ -126,6 +127,24 @@ model MemoryBusSnapshot {
   createdAt         DateTime @default(now())
   runId             String
   run               Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+}
+
+// ─── IR Graph ───────────────────────────────────────────
+// Assembled IR product artifact consumed by renderers
+model IrGraph {
+  id              String   @id @default(cuid())
+  tier            String
+  graph           String   @default("{}")  // JSON blob of IRGraph
+  findingCount    Int      @default(0)
+  emergenceCount  Int      @default(0)
+  tensionCount    Int      @default(0)
+  gapCount        Int      @default(0)
+  qualityGrade    String?
+  overallScore    Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  runId           String   @unique
+  run             Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
 }
 
 // ─── Settings ────────────────────────────────────────────
