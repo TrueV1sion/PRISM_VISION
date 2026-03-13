@@ -22,7 +22,8 @@ import { z } from "zod";
 import type Anthropic from "@anthropic-ai/sdk";
 import { getAnthropicClient, MODELS, cachedSystemPrompt } from "@/lib/ai/client";
 import { getMCPManager, type MCPManager } from "@/lib/mcp/client";
-import { WEB_SEARCH_ARCHETYPES } from "@/lib/mcp/config";
+import { getToolRegistry, WEB_SEARCH_ARCHETYPES } from "@/lib/data-sources/registry";
+import type { ToolRegistry } from "@/lib/data-sources/registry";
 import {
   AgentResultSchema,
   type AgentResult,
@@ -129,6 +130,8 @@ export async function deploy(input: DeployInput): Promise<DeployOutput> {
   const mcpManager = getMCPManager();
   await mcpManager.initialize();
 
+  const toolRegistry = getToolRegistry();
+
   // Separate CRITIC-FACTUAL from other agents
   const criticAgents = agents.filter((a) => a.archetype === "CRITIC-FACTUAL");
   const regularAgents = agents.filter((a) => a.archetype !== "CRITIC-FACTUAL");
@@ -152,6 +155,7 @@ export async function deploy(input: DeployInput): Promise<DeployOutput> {
       blueprint,
       emitEvent,
       mcpManager,
+      toolRegistry,
     );
   } else {
     // Check abort before starting parallel execution
@@ -163,6 +167,7 @@ export async function deploy(input: DeployInput): Promise<DeployOutput> {
       regularAgents,
       emitEvent,
       mcpManager,
+      toolRegistry,
     );
   }
 
@@ -202,6 +207,7 @@ export async function deploy(input: DeployInput): Promise<DeployOutput> {
         criticWithClaims,
         emitEvent,
         mcpManager,
+        toolRegistry,
       );
     } catch (err) {
       console.error(
@@ -225,6 +231,7 @@ async function executeParallel(
   agents: ConstructedAgent[],
   emitEvent: (event: PipelineEvent) => void,
   mcpManager: MCPManager,
+  toolRegistry: ToolRegistry,
 ): Promise<AgentResult[]> {
   const settled = await Promise.allSettled(
     agents.map((agent) => {
@@ -234,7 +241,7 @@ async function executeParallel(
         archetype: agent.archetype,
         dimension: agent.dimension,
       });
-      return executeAgent(agent, emitEvent, mcpManager);
+      return executeAgent(agent, emitEvent, mcpManager, toolRegistry);
     }),
   );
 
@@ -248,6 +255,7 @@ async function executeTwoWaves(
   blueprint: Blueprint,
   emitEvent: (event: PipelineEvent) => void,
   mcpManager: MCPManager,
+  toolRegistry: ToolRegistry,
 ): Promise<AgentResult[]> {
   const memoryBus = new MemoryBus(blueprint.query);
   const midpoint = Math.ceil(agents.length / 2);
@@ -270,7 +278,7 @@ async function executeTwoWaves(
         archetype: agent.archetype,
         dimension: agent.dimension,
       });
-      return executeAgent(agent, emitEvent, mcpManager);
+      return executeAgent(agent, emitEvent, mcpManager, toolRegistry);
     }),
   );
 
@@ -334,7 +342,7 @@ async function executeTwoWaves(
         archetype: agent.archetype,
         dimension: agent.dimension,
       });
-      return executeAgent(agent, emitEvent, mcpManager);
+      return executeAgent(agent, emitEvent, mcpManager, toolRegistry);
     }),
   );
 
@@ -409,6 +417,7 @@ async function executeAgent(
   agent: ConstructedAgent,
   emitEvent: (event: PipelineEvent) => void,
   mcpManager: MCPManager,
+  toolRegistry: ToolRegistry,
 ): Promise<AgentResult> {
   const client = getAnthropicClient();
 
@@ -416,7 +425,10 @@ async function executeAgent(
 
   const archetypeFamily = agent.archetype as ArchetypeFamily;
 
-  // MCP tools (already in Anthropic tool format)
+  // In-process data source tools (Layer 2 + Layer 3)
+  const dataSourceTools = toolRegistry.getToolsForArchetype(archetypeFamily);
+
+  // Remote MCP tools (Anthropic servers: PubMed, ClinicalTrials, etc.)
   const mcpTools = mcpManager.getToolsForArchetype(archetypeFamily);
 
   // Track which tool names are MCP tools for routing
@@ -437,13 +449,18 @@ async function executeAgent(
       getAgentResultJsonSchema() as Anthropic.Messages.Tool.InputSchema,
   };
 
+  // Data source tools listed first (research before granular),
+  // then MCP tools, then submit_findings
   const allTools: Anthropic.Messages.ToolUnion[] = [
+    ...dataSourceTools,
     ...mcpTools,
     submitFindingsTool,
   ];
 
   // Include MCP gaps as pre-populated gap entries
   const mcpGaps = mcpManager.getGapsForArchetype(archetypeFamily);
+  const dataSourceGaps = toolRegistry.getGapsForArchetype(archetypeFamily);
+  const allGaps = [...dataSourceGaps, ...mcpGaps];
 
   // ─── Build initial messages ───────────────────────────────
 
@@ -452,8 +469,8 @@ async function executeAgent(
       role: "user",
       content:
         agent.researchPrompt +
-        (mcpGaps.length > 0
-          ? `\n\n## Known Data Gaps (unavailable tools)\n${mcpGaps.map((g) => `- ${g}`).join("\n")}\nInclude these in your gaps output.`
+        (allGaps.length > 0
+          ? `\n\n## Known Data Gaps (unavailable tools)\n${allGaps.map((g) => `- ${g}`).join("\n")}\nInclude these in your gaps output.`
           : ""),
     },
   ];
@@ -525,12 +542,12 @@ async function executeAgent(
         submitFindingsInput.toolsUsed ?? toolsUsed;
       submitFindingsInput.tokensUsed = totalTokens;
 
-      // Add known MCP gaps to the gaps array
-      if (mcpGaps.length > 0) {
+      // Add known gaps to the gaps array
+      if (allGaps.length > 0) {
         const existingGaps = Array.isArray(submitFindingsInput.gaps)
           ? (submitFindingsInput.gaps as string[])
           : [];
-        submitFindingsInput.gaps = [...existingGaps, ...mcpGaps];
+        submitFindingsInput.gaps = [...existingGaps, ...allGaps];
       }
 
       // Normalize AI output — models frequently return enum values in mixed case
@@ -550,16 +567,43 @@ async function executeAgent(
         const toolName = toolBlock.name;
         const toolInput = toolBlock.input as Record<string, unknown>;
 
-        // web_search is handled server-side by Anthropic -- we should not
-        // see tool_use blocks for it in practice, but if we do, skip.
+        // web_search is handled server-side by Anthropic
         if (toolName === "web_search") {
-          // Server-side tool -- results come back in the response automatically.
-          // This branch should not normally execute.
           continue;
         }
 
-        // MCP tool call
-        if (mcpToolNames.has(toolName)) {
+        // Route 1: In-process data source tool (no __ in name)
+        if (toolRegistry.hasToolName(toolName)) {
+          emitEvent({
+            type: "tool_call",
+            agentName: agent.name,
+            toolName,
+            serverName: "data-sources",
+          });
+
+          if (!toolsUsed.includes(toolName)) {
+            toolsUsed.push(toolName);
+          }
+
+          try {
+            const toolResult = await toolRegistry.executeTool(toolName, toolInput);
+            toolResultContents.push({
+              type: "tool_result",
+              tool_use_id: toolBlock.id,
+              content: toolResult.slice(0, 10000),
+            });
+          } catch (err) {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            toolResultContents.push({
+              type: "tool_result",
+              tool_use_id: toolBlock.id,
+              content: `Tool error: ${errMsg}`,
+              is_error: true,
+            });
+          }
+        }
+        // Route 2: Remote MCP tool (has __ in name)
+        else if (mcpToolNames.has(toolName)) {
           emitEvent({
             type: "tool_call",
             agentName: agent.name,
@@ -572,18 +616,14 @@ async function executeAgent(
           }
 
           try {
-            const toolResult = await mcpManager.executeTool(
-              toolName,
-              toolInput,
-            );
+            const toolResult = await mcpManager.executeTool(toolName, toolInput);
             toolResultContents.push({
               type: "tool_result",
               tool_use_id: toolBlock.id,
-              content: toolResult.slice(0, 10000), // Cap at 10K chars
+              content: toolResult.slice(0, 10000),
             });
           } catch (err) {
-            const errMsg =
-              err instanceof Error ? err.message : String(err);
+            const errMsg = err instanceof Error ? err.message : String(err);
             toolResultContents.push({
               type: "tool_result",
               tool_use_id: toolBlock.id,
@@ -591,12 +631,13 @@ async function executeAgent(
               is_error: true,
             });
           }
-        } else {
-          // Unknown tool -- return error
+        }
+        // Unknown tool
+        else {
           toolResultContents.push({
             type: "tool_result",
             tool_use_id: toolBlock.id,
-            content: `Unknown tool "${toolName}". Available tools: ${[...mcpToolNames].join(", ")}, submit_findings`,
+            content: `Unknown tool "${toolName}".`,
             is_error: true,
           });
         }
@@ -663,7 +704,7 @@ async function executeAgent(
     dimension: agent.dimension,
     findings: [],
     gaps: [
-      ...mcpGaps,
+      ...allGaps,
       "Agent did not produce structured findings within the tool-use loop limit.",
     ],
     signals: [],
