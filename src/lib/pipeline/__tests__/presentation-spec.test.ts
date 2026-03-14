@@ -550,3 +550,20 @@ describe("chart-heavy exemplar sparkline structure", () => {
     expect(exemplar).toMatch(/class="sparkline-container"[^>]*>/);
   });
 });
+
+describe("chart-heavy exemplar bar chart structure", () => {
+  const exemplar = readFileSync(
+    resolve(process.cwd(), "references/exemplars/chart-heavy.html"),
+    "utf-8"
+  );
+
+  it("uses <svg class='bar-chart'> not bar-chart-container div", () => {
+    expect(exemplar).not.toContain("bar-chart-container");
+    expect(exemplar).not.toContain("bar-wrapper");
+    expect(exemplar).toMatch(/svg[^>]*class="bar-chart"/);
+  });
+
+  it("uses <rect class='bar'> elements inside bar-chart SVG", () => {
+    expect(exemplar).toMatch(/rect[^>]*class="bar"/);
+  });
+});
