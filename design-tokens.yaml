@@ -1,0 +1,517 @@
+# ═══════════════════════════════════════════════════════════════
+# PRISM Design System v4.1 — Token Definition
+# Theme: Executive Dark + Inovalon Brand
+# Perceptual color science: OKLCH + APCA contrast validation
+# v4.1: Adds chart components, keyframe animations, interaction states
+# ═══════════════════════════════════════════════════════════════
+colors:
+  # ── LAYER 1: Inovalon Brand Palette ──
+  # Source of truth — all theme tokens derive from these
+  inov-navy: "#003D79"           # Corporate primary (Hue: ~217°)
+  inov-cerulean: "#4E84C4"       # Interactive default (Hue: ~215°)
+  inov-sky: "#59DDFD"            # Accent bright (Hue: ~193°)
+  inov-midnight: "#001E3C"       # Deep background (Hue: ~210°)
+  inov-jade: "#00E49F"           # Success/positive (Hue: ~160°)
+  inov-sand: "#F5E6BB"           # Warning/caution (Hue: ~40°)
+  inov-violet: "#6C6CFF"        # Emergence/creative (Hue: ~240°)
+  inov-cloud: "#F4F0EA"          # Light surface (Hue: ~32°)
+
+  # ── LAYER 2: Executive Dark Theme — Surfaces ──
+  # 5-tier depth system, darkest → lightest
+  bg-primary: "#0A0B10"          # Canvas (L: ~0.06)
+  bg-secondary: "#10121A"        # Section background (L: ~0.08)
+  bg-tertiary: "#181B26"         # Recessed areas (L: ~0.12)
+  bg-elevated: "#1E2130"         # Cards, panels (L: ~0.15)
+  bg-card: "rgba(30, 33, 48, 0.85)"  # Frosted glass overlay
+
+  # ── LAYER 2b: Executive Dark — Text Hierarchy ──
+  text-primary: "#F0F2F8"        # Headlines, primary content (L: ~0.95)
+  text-secondary: "#A8B0C9"      # Body text, descriptions (L: ~0.76) APCA-fixed
+  text-tertiary: "#8792B5"       # Labels, metadata, captions (L: ~0.66) APCA-fixed
+
+  # ── LAYER 3: Semantic Accent Tokens ──
+  # Mapped from brand → function
+  accent: "#538BCD"              # Default interactive (cerulean) APCA-fixed
+  accent-bright: "#59DDFD"       # Hero text, emergent highlights (sky)
+  accent-success: "#00E49F"      # Positive outcomes, opportunity (jade)
+  accent-warning: "#F5E6BB"      # Caution, medium confidence (sand)
+  accent-error: "#FF5C5C"        # Risk, tension, negative
+  accent-violet: "#7979FF"       # Emergence, regulatory (violet) APCA-fixed
+
+  # ── LAYER 3b: Derived State Colors ──
+  # Hover, active, disabled — generated from accent base
+  accent-hover: "#6E9ED8"        # cerulean lightened +10% L (from fixed accent)
+  accent-active: "#3E70AC"       # cerulean darkened -10% L (from fixed accent)
+  accent-disabled: "#3A4058"     # Desaturated mid-surface
+
+  # ── LAYER 3c: Border System ──
+  border: "rgba(78, 132, 196, 0.12)"    # Subtle structural
+  border-bright: "rgba(89, 221, 253, 0.25)"  # Emphasis, focus
+
+  # ── LAYER 4: Chart Colors ──
+  # 8-stop sequence following brand palette order
+  chart-1: "#003D79"             # navy
+  chart-2: "#4E84C4"             # cerulean
+  chart-3: "#59DDFD"             # sky
+  chart-4: "#001E3C"             # midnight
+  chart-5: "#00E49F"             # jade
+  chart-6: "#F5E6BB"             # sand
+  chart-7: "#6C6CFF"             # violet
+  chart-8: "#F4F0EA"             # cloud
+
+  # ── LAYER 5: Component-Level Semantic Tokens ──
+  # Indirection layer: component references these, not primitives
+  card-bg: "#1E2130"             # → bg-elevated
+  card-border: "rgba(78, 132, 196, 0.12)"  # → border
+  card-radius: "0.75rem"         # → radius-lg
+  finding-border-default: "#538BCD"  # → accent (APCA-fixed)
+  finding-border-emergent: "#59DDFD" # → accent-bright
+  finding-border-risk: "#FF5C5C"     # → accent-error
+  finding-border-opportunity: "#00E49F"  # → accent-success
+  finding-border-regulatory: "#7979FF"   # → accent-violet (APCA-fixed)
+  finding-border-caution: "#F5E6BB"      # → accent-warning
+  nav-bg: "rgba(10, 11, 16, 0.95)"  # → bg-primary + alpha
+  nav-active: "#59DDFD"          # → accent-bright
+
+typography:
+  # Modular scale: Perfect Fourth (1.333)
+  # Strong hierarchy for executive presentations
+  base_size: 1.0                 # 16px (1rem)
+  scale_ratio: "perfect_fourth"  # 1.333 — bold differentiation
+
+  # Font families — system stack for zero latency
+  font_family_sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
+  font_family_mono: "'JetBrains Mono', 'Fira Code', Consolas, monospace"
+
+  # Font weights
+  weight_regular: 400
+  weight_medium: 500
+  weight_semibold: 600
+  weight_bold: 700
+  weight_extrabold: 800
+  weight_black: 900
+
+  # Fluid type scale — viewport-responsive via clamp()
+  # Named tokens map to current --text-* scale
+  fluid_sizes:
+    xs:   { min: "0.65rem", preferred: "0.6rem + 0.2vw", max: "0.8rem" }
+    sm:   { min: "0.8rem",  preferred: "0.74rem + 0.3vw", max: "1rem" }
+    base: { min: "1rem",    preferred: "0.92rem + 0.4vw", max: "1.2rem" }
+    lg:   { min: "1.2rem",  preferred: "1.1rem + 0.5vw",  max: "1.5rem" }
+    xl:   { min: "1.5rem",  preferred: "1.35rem + 0.65vw", max: "1.9rem" }
+    2xl:  { min: "1.9rem",  preferred: "1.7rem + 0.85vw",  max: "2.5rem" }
+    3xl:  { min: "2.4rem",  preferred: "2.1rem + 1.1vw",   max: "3.2rem" }
+    hero: { min: "3.2rem",  preferred: "2.8rem + 1.6vw",   max: "4.5rem" }
+
+  # Line heights — size-adaptive
+  line_height:
+    tight: 1.15        # Hero, large headings
+    snug: 1.3           # Subheadings
+    normal: 1.6         # Body text
+    relaxed: 1.7        # Small text, captions
+    loose: 1.8          # Dense reading (timeline items)
+
+  # Letter spacing — context-aware
+  tracking:
+    tightest: "-0.02em"   # Large headings
+    tight: "-0.01em"      # Subheadings
+    normal: "0"           # Body text
+    wide: "0.08em"        # Small text
+    widest: "0.18em"      # Eyebrow / all-caps labels
+
+spacing:
+  # Base unit: 4px (0.25rem)
+  base: 0.25
+  # Harmonic scale — each step is a deliberate jump
+  # space-1: 0.25rem  (4px)
+  # space-2: 0.5rem   (8px)
+  # space-3: 0.75rem  (12px)
+  # space-4: 1rem     (16px)
+  # space-5: 1.25rem  (20px)
+  # space-6: 1.5rem   (24px)
+  # space-7: 2rem     (32px)
+  # space-8: 2.5rem   (40px)
+  # space-9: 3rem     (48px)
+  # space-10: 4rem    (64px)
+  # space-11: 5rem    (80px — vw-unit padding)
+
+shadows:
+  # Elevation system for Executive Dark theme
+  # Uses blue-shifted shadows matching brand
+  sm: "0 1px 3px rgba(0, 0, 0, 0.4)"
+  md: "0 4px 12px rgba(0, 0, 0, 0.5)"
+  lg: "0 8px 30px rgba(0, 0, 0, 0.6)"
+  xl: "0 16px 48px rgba(0, 0, 0, 0.7)"
+  glow-accent: "0 0 30px rgba(78, 132, 196, 0.10)"
+  glow-bright: "0 0 40px rgba(89, 221, 253, 0.12)"
+  glow-jade: "0 0 30px rgba(0, 228, 159, 0.08)"
+  glow-error: "0 0 20px rgba(255, 92, 92, 0.10)"
+  glow-violet: "0 0 30px rgba(108, 108, 255, 0.10)"
+  inner: "inset 0 2px 4px rgba(0, 0, 0, 0.3)"
+
+radii:
+  # Border radius scale
+  none: 0
+  sm: 0.1875              # 3px — tags, tiny badges
+  md: 0.25                # 4px — confidence badges
+  lg: 0.5                 # 8px — buttons, bar charts
+  xl: 0.75                # 12px — cards, panels
+  2xl: 0.875              # 14px — emergence cards
+  pill: 9999              # Pills, agent chips (20px)
+
+transitions:
+  # Easing functions — cinematic motion language
+  easing_out_expo: "cubic-bezier(0.16, 1, 0.3, 1)"      # Primary — smooth decel
+  easing_out_quart: "cubic-bezier(0.25, 1, 0.5, 1)"     # Secondary — snappy
+  easing_spring: "cubic-bezier(0.34, 1.56, 0.64, 1)"    # Playful — overshoot
+  easing_in_out: "cubic-bezier(0.4, 0, 0.2, 1)"         # Balanced — subtle
+
+  # Duration scale
+  duration_fast: "200ms"         # Micro-interactions, hover
+  duration_normal: "350ms"       # Standard transitions
+  duration_slow: "600ms"         # Slide content reveal (anim class)
+  duration_cinematic: "1000ms"   # Hero entrances, page transitions
+
+  # Animation stagger — sequential content reveal
+  stagger_base: "100ms"          # Delay increment per .dN class
+  stagger_max_steps: 7           # d1 through d7
+
+breakpoints:
+  sm: 640                  # Mobile landscape
+  md: 768                  # Tablet portrait (grid collapse point)
+  lg: 1024                 # Tablet landscape
+  xl: 1280                 # Desktop
+  2xl: 1536                # Ultrawide
+
+z_index:
+  # 5-tier z-index scale — prevents collisions
+  base: 0                  # Slide content
+  raised: 2                # slide-inner (above glow)
+  sticky: 10               # Sticky headers (if any)
+  overlay: 100             # Slide counter, nav hint
+  nav: 500                 # Navigation panel
+  modal: 1000              # Nav toggle button, modals
+
+# ═══════════════════════════════════════════════════════════════
+# PRISM-SPECIFIC SEMANTIC TOKENS
+# Slide-type → glow color mapping
+# ═══════════════════════════════════════════════════════════════
+prism:
+  glow_colors:
+    dimension: "var(--inov-cerulean)"     # Standard analytical slides
+    tension: "var(--accent-error)"         # Conflict / tension points
+    emergence_1: "var(--accent-bright)"    # First emergent insight
+    emergence_2: "var(--inov-sky)"         # Second emergent insight
+    emergence_3: "var(--accent-violet)"    # Third emergent insight
+    timeline: "var(--accent-success)"      # Strategic roadmap
+    provenance: "var(--accent)"            # Source tracking
+    gaps: "var(--accent)"                  # Knowledge gaps
+
+  # Source quality notation
+  source_tiers:
+    primary: { icon: "●", color: "var(--accent-success)", label: "PRIMARY" }
+    secondary: { icon: "◐", color: "var(--accent-warning)", label: "SECONDARY" }
+    tertiary: { icon: "○", color: "var(--accent-error)", label: "TERTIARY" }
+    dagger_notation: "†"
+
+  # Confidence badges
+  confidence:
+    high: { bg: "rgba(0,228,159,0.12)", text: "var(--accent-success)" }
+    medium: { bg: "rgba(245,230,187,0.15)", text: "var(--accent-warning)" }
+    low: { bg: "rgba(255,92,92,0.12)", text: "var(--accent-error)" }
+
+  # Nav panel tags
+  nav_tags:
+    key: { bg: "rgba(255,92,92,0.2)", text: "var(--accent-error)" }
+    new: { bg: "rgba(89,221,253,0.2)", text: "var(--accent-bright)" }
+
+# ═══════════════════════════════════════════════════════════════
+# LAYER 6: CHART COMPONENT TOKENS
+# Geometry, stroke, and layout specs for all SVG/CSS chart types
+# ═══════════════════════════════════════════════════════════════
+charts:
+  # ── Donut / Ring Chart ──
+  donut:
+    radius: 80                          # SVG circle r attribute
+    viewbox: "0 0 200 200"              # SVG viewBox (2 × (radius + stroke_width/2))
+    cx: 100                             # Center x
+    cy: 100                             # Center y
+    stroke_width: 24                    # Default segment stroke width
+    stroke_width_hover: 28              # Expanded on hover
+    circumference: 502.65               # 2πr — stroke-dasharray base value
+    max_width: "200px"                  # CSS max-width for svg container
+    hover_opacity: 0.8                  # Segment hover opacity
+    segment_transition: "stroke-dashoffset 1s var(--ease-out-expo), opacity 0.2s"
+    segment_stagger_base: "100ms"       # Delay increment per segment (100ms, 200ms, 300ms...)
+    legend_gap: "12px"                  # Legend item spacing
+    legend_dot_size: "12px"             # Legend color indicator
+
+  # ── Bar Chart (vertical) ──
+  bar_vertical:
+    transform_origin: "bottom"          # Bars grow upward
+    initial_scale: "scaleY(0)"          # Hidden state
+    visible_scale: "scaleY(1)"          # Revealed state
+    transition: "transform 0.6s var(--ease-out-expo), opacity 0.3s"
+    stagger_base: "100ms"              # Per-bar delay (100ms, 200ms, 300ms...)
+    min_height: "4px"                   # Minimum bar height (prevents invisible bars)
+    border_radius: "6px 6px 0 0"       # Top-rounded bars
+    hover_opacity: 0.85
+    focus_outline: "2px solid var(--accent)"
+    focus_outline_offset: "2px"
+
+  # ── Bar Chart (horizontal / comparison) ──
+  bar_horizontal:
+    transform_origin: "left"
+    initial_scale: "scaleX(0)"
+    visible_scale: "scaleX(1)"
+    transition: "transform 0.8s var(--ease-out-expo)"
+    bar_height: "32px"                  # Default horizontal bar height
+    bar_radius: "6px"
+    track_bg: "rgba(78, 132, 196, 0.06)"  # Unfilled portion
+    track_height: "32px"
+    label_width: "100px"                # Left label column
+
+  # ── Line Chart ──
+  line_chart:
+    clip_transition: "width 1.5s var(--ease-out-expo)"
+    clip_width_hidden: "0"
+    clip_width_visible: "500px"
+    point_scale_hidden: "scale(0)"
+    point_scale_visible: "scale(1)"
+    point_transition: "transform 0.3s var(--ease-spring)"
+    point_transition_delay: "1.2s"      # Points appear after line draws
+    stroke_width: 2                     # Line thickness
+    point_radius: 4                     # Data point dot size
+
+  # ── Sparkline (inline mini-chart) ──
+  sparkline:
+    width: "80px"
+    height: "24px"
+    stroke_dasharray: 200               # Total path length approximation
+    stroke_dashoffset_hidden: 200       # Fully hidden
+    stroke_dashoffset_visible: 0        # Fully drawn
+    transition: "stroke-dashoffset 1s var(--ease-out-expo)"
+    dot_opacity_hidden: 0
+    dot_opacity_visible: 1
+    dot_transition_delay: "0.8s"
+    stroke_width: 2
+
+  # ── Heatmap ──
+  heatmap:
+    cell_padding: "10px 8px"
+    cell_radius: "4px"
+    cell_font_size: "10px"
+    cell_font_weight: 600
+    cell_transition: "all 0.2s"
+    # Intensity scale — maps to opacity or saturation of accent colors
+    intensity_levels: 5                 # Number of color steps
+    intensity_min_opacity: 0.15
+    intensity_max_opacity: 1.0
+
+  # ── Progress / Timeline Bar ──
+  progress_bar:
+    height: "3px"                       # Thin top-of-page progress
+    gradient: "linear-gradient(90deg, var(--inov-navy), var(--inov-cerulean), var(--inov-sky))"
+    transition: "width 0.3s var(--ease-out-quart)"
+    z_index: 1000
+
+  # ── Animated Counter ──
+  counter:
+    duration: "1500ms"                  # Count-up animation length
+    easing: "var(--ease-out-expo)"
+    font_weight: 800                    # Stat number weight
+    font_size: "var(--text-2xl)"        # Default stat size
+
+# ═══════════════════════════════════════════════════════════════
+# LAYER 7: KEYFRAME ANIMATIONS
+# Reusable @keyframes definitions used across all PRISM briefs
+# ═══════════════════════════════════════════════════════════════
+keyframes:
+  # ── Content Reveal — Primary entrance animation ──
+  fadeUp:
+    from: { opacity: 0, transform: "translateY(24px)" }
+    to:   { opacity: 1, transform: "none" }
+    duration: "var(--dur-slow)"         # 600ms
+    easing: "var(--ease-out-expo)"
+
+  # ── Fade In — Simple opacity entrance ──
+  fadeIn:
+    from: { opacity: 0 }
+    to:   { opacity: 1 }
+    duration: "300ms"
+    easing: "var(--ease-out-expo)"
+
+  # ── Slide Up — Compact entrance for cards/findings ──
+  slideUp:
+    from: { opacity: 0, transform: "translateY(16px)" }
+    to:   { opacity: 1, transform: "none" }
+    duration: "500ms"
+    easing: "var(--ease-out-expo)"
+
+  # ── Pulse — Loading/processing indicator ──
+  pulse:
+    "0%,100%": { opacity: 1 }
+    "50%":     { opacity: 0.4 }
+    duration: "1.5s"
+    easing: "ease-in-out"
+    iteration: "infinite"
+
+  # ── Spin — Circular loading spinner ──
+  spin:
+    to: { transform: "rotate(360deg)" }
+    duration: "1s"
+    easing: "linear"
+    iteration: "infinite"
+
+  # ── Glow Pulse — Subtle ambient glow throb ──
+  glowPulse:
+    "0%,100%": { opacity: 0.4 }
+    "50%":     { opacity: 0.7 }
+    duration: "4s"
+    easing: "ease-in-out"
+    iteration: "infinite"
+
+  # ── Stagger System ──
+  stagger:
+    base_delay: "100ms"                 # d1 = 100ms, d2 = 200ms, ..., d7 = 700ms
+    max_steps: 7
+    tight_delay: "50ms"                 # anim-d1 = 50ms, anim-d2 = 100ms, ...
+
+# ═══════════════════════════════════════════════════════════════
+# LAYER 8: INTERACTION STATE TOKENS
+# Hover, focus, active, and glass morphism specs
+# ═══════════════════════════════════════════════════════════════
+interactions:
+  # ── Hover States ──
+  hover:
+    card_border_color: "rgba(255, 255, 255, 0.1)"
+    card_transform: "translateY(-2px)"
+    chart_segment_opacity: 0.8
+    link_opacity: 0.85
+    nav_item_bg: "rgba(78, 132, 196, 0.08)"
+    button_brightness: 1.1
+
+  # ── Focus States (accessibility) ──
+  focus:
+    outline_width: "2px"
+    outline_style: "solid"
+    outline_color: "var(--accent)"
+    outline_offset: "2px"
+    ring_shadow: "0 0 0 3px rgba(83, 139, 205, 0.25)"
+
+  # ── Active / Pressed States ──
+  active:
+    scale: "scale(0.98)"
+    opacity: 0.9
+
+  # ── Disabled States ──
+  disabled:
+    opacity: 0.4
+    cursor: "not-allowed"
+    filter: "grayscale(0.3)"
+
+  # ── Glass Morphism ──
+  glass:
+    blur_sm: "blur(8px)"
+    blur_md: "blur(12px)"
+    blur_lg: "blur(20px)"
+    bg_card: "rgba(30, 33, 48, 0.85)"
+    bg_nav: "rgba(10, 11, 16, 0.95)"
+    bg_nav_toggle: "rgba(78, 132, 196, 0.15)"
+    border_glass: "rgba(78, 132, 196, 0.3)"
+
+  # ── Scroll Reveal (IntersectionObserver) ──
+  scroll_reveal:
+    threshold: 0.15
+    root_margin: "0px 0px -60px 0px"
+
+# ═══════════════════════════════════════════════════════════════
+# LAYER 9: COMPONENT GEOMETRY TOKENS
+# Structural dimensions for nav, cards, tables, and layout
+# ═══════════════════════════════════════════════════════════════
+components:
+  # ── Navigation Panel ──
+  nav_panel:
+    width: "320px"
+    slide_offset: "-340px"
+    transition: "right 0.35s var(--ease-out-expo)"
+    padding_top: "70px"
+    padding_x: "20px"
+    padding_bottom: "30px"
+
+  nav_toggle:
+    size: "44px"
+    border_radius: "50%"
+    top: "20px"
+    right: "20px"
+    font_size: "18px"
+
+  # ── Navigation Dots ──
+  nav_dots:
+    size: "8px"
+    active_size: "8px"
+    gap: "5px"
+
+  # ── Finding Cards ──
+  finding_card:
+    padding: "20px"
+    border_radius: "var(--radius-xl)"
+    border_width: "1px"
+    accent_border_width: "3px"
+    accent_border_position: "left"
+
+  # ── Compact Table ──
+  compact_table:
+    cell_padding: "0.5rem 0.75rem"
+    header_bg: "rgba(78, 132, 196, 0.06)"
+    header_font_size: "var(--text-xs)"
+    header_tracking: "var(--tracking-widest)"
+    row_hover_bg: "rgba(255, 255, 255, 0.03)"
+    border_color: "rgba(78, 132, 196, 0.08)"
+
+  # ── Confidence Badges ──
+  confidence_badge:
+    padding: "2px 8px"
+    font_size: "10px"
+    font_weight: 700
+    border_radius: "var(--radius-md)"
+    letter_spacing: "var(--tracking-wide)"
+
+  # ── Slide Layout ──
+  slide:
+    max_width: "960px"
+    padding: "2.5rem"
+    min_height: "100vh"
+    glow_size: "400px"
+    glow_blur: "120px"
+    glow_opacity: 0.07
+    footer_font_size: "var(--text-xs)"
+    footer_padding: "0.75rem 0"
+    counter_font_size: "11px"
+
+  # ── Hero Stat Block ──
+  hero_stat:
+    padding: "22px 14px"
+    border_radius: "12px"
+    bg: "rgba(255, 255, 255, 0.03)"
+    border: "1px solid var(--border)"
+    number_size: "var(--text-2xl)"
+    number_weight: 800
+    label_size: "var(--text-xs)"
+    label_tracking: "var(--tracking-widest)"
+
+  # ── Source List ──
+  source_list:
+    font_size: "var(--text-xs)"
+    color: "var(--text-tertiary)"
+    border_top: "1px solid var(--border)"
+    padding_top: "0.5rem"
+    margin_top: "1.5rem"
+
+  # ── Eyebrow Label ──
+  eyebrow:
+    font_size: "var(--text-xs)"
+    font_weight: 700
+    letter_spacing: "var(--tracking-widest)"
+    text_transform: "uppercase"
+    color: "var(--accent-bright)"
