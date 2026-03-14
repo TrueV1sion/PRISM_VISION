@@ -29,13 +29,14 @@ model Run {
   completedAt     DateTime?
 
   // Relations
-  agents             Agent[]
-  findings           Finding[]
-  synthesis          Synthesis[]
-  dimensions         Dimension[]
-  presentation       Presentation?
-  memoryBusSnapshots MemoryBusSnapshot[]
-  irGraph            IrGraph?
+  agents               Agent[]
+  findings             Finding[]
+  synthesis            Synthesis[]
+  dimensions           Dimension[]
+  presentation         Presentation?
+  memoryBusSnapshots   MemoryBusSnapshot[]
+  irGraph              IrGraph?
+  presentationQuality  PresentationQuality?
 }
 
 // ─── Dimension ───────────────────────────────────────────
@@ -165,4 +166,35 @@ model ApiKey {
   encryptedKey String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+// ─── PresentationQuality ──────────────────────────────────
+// Quality telemetry from the agentic presentation pipeline
+model PresentationQuality {
+  id                  String   @id @default(cuid())
+  overall             Float
+  grade               String
+  classNameValidity   Float
+  structuralIntegrity Float
+  chartAdoption       Float
+  animationVariety    Float
+  counterAdoption     Float
+  emergenceHierarchy  Float
+  sourceAttribution   Float
+  slideCount          Int
+  issueCount          Int
+  reviewScore         Float?
+  remediationRounds   Int      @default(0)
+  planMs              Int?
+  chartCompileMs      Int?
+  generateMs          Int?
+  assembleMs          Int?
+  validateMs          Int?
+  reviewMs            Int?
+  remediateMs         Int?
+  finalizeMs          Int?
+  totalMs             Int?
+  createdAt           DateTime @default(now())
+  runId               String   @unique
+  run                 Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
 }
