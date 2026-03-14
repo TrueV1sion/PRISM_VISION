@@ -6,6 +6,7 @@ import type { AgentDeployResult } from "./deploy";
 import { synthesize } from "./synthesize";
 import { verify } from "./verify";
 import { present } from "./present";
+import { presentOrchestrated } from "./present-orchestrator";
 import {
   runQualityAssurance,
   getQualityGateSystem,
@@ -351,8 +352,12 @@ export async function executePipeline(
     await updateRunStatus(runId, "PRESENT");
     emitEvent({ type: "phase_change", phase: "PRESENT", message: "Generating HTML5 presentation..." });
 
+    const useAgentic = process.env.PRISM_AGENTIC_PRESENT === "true";
     const presentation = await withRetry(
-      () => present({ synthesis, agentResults, blueprint, emitEvent, memoryBus }),
+      () =>
+        useAgentic
+          ? presentOrchestrated({ synthesis, agentResults, blueprint, emitEvent, memoryBus })
+          : present({ synthesis, agentResults, blueprint, emitEvent, memoryBus }),
       { maxRetries: 1, baseDelayMs: 3000, label: "PRESENT" },
     );
 

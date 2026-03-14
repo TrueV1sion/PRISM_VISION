@@ -214,6 +214,19 @@ export const PresentationResultSchema = z.object({
   title: z.string(),
   subtitle: z.string(),
   slideCount: z.number(),
+  // Optional quality/telemetry fields from agentic pipeline
+  quality: z.object({
+    overall: z.number(),
+    grade: z.string(),
+  }).optional(),
+  timings: z.object({
+    planMs: z.number(),
+    chartCompileMs: z.number(),
+    generateMs: z.number(),
+    assembleMs: z.number(),
+    validateMs: z.number(),
+    totalMs: z.number(),
+  }).optional(),
 });
 export type PresentationResult = z.infer<typeof PresentationResultSchema>;
 
@@ -279,7 +292,13 @@ export type PipelineEvent =
   | { type: "ir_complete"; runId: string; findingCount: number; emergenceCount: number; tensionCount: number; gapCount: number; qualityGrade?: string }
   | { type: "complete"; manifest: IntelligenceManifest }
   | { type: "error"; message: string; phase?: string }
-  | { type: "thinking_token"; token: string };
+  | { type: "thinking_token"; token: string }
+  | { type: "presentation_planning"; slideCount: number }
+  | { type: "slide_generation_started"; totalSlides: number }
+  | { type: "slide_generation_progress"; completed: number; total: number }
+  | { type: "slide_validation"; overall: number; grade: string }
+  | { type: "design_review_started" }
+  | { type: "remediation_started"; slideCount: number };
 
 
 // ─── Verification Gate (Phase 3.5) ──────────────────────────
