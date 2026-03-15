@@ -1,7 +1,7 @@
 import type { EngineManifest } from "./types";
 import { commandCenterManifest } from "./command-center";
 
-const ALL_ENGINES: EngineManifest[] = [
+const ALL_ENGINES: EngineManifest[] = ([
   commandCenterManifest,
   {
     id: "ma",
@@ -11,7 +11,7 @@ const ALL_ENGINES: EngineManifest[] = [
     icon: "TrendingUp",
     accentColor: "#8b5cf6",
     accentColorName: "violet",
-    status: "coming-soon",
+    status: "coming-soon" as const,
     order: 1,
     route: "/engines/ma",
     isDefault: false,
@@ -24,7 +24,7 @@ const ALL_ENGINES: EngineManifest[] = [
     icon: "DollarSign",
     accentColor: "#10b981",
     accentColorName: "emerald",
-    status: "coming-soon",
+    status: "coming-soon" as const,
     order: 2,
     route: "/engines/finance",
     isDefault: false,
@@ -37,7 +37,7 @@ const ALL_ENGINES: EngineManifest[] = [
     icon: "Shield",
     accentColor: "#f59e0b",
     accentColorName: "amber",
-    status: "coming-soon",
+    status: "coming-soon" as const,
     order: 3,
     route: "/engines/regulatory",
     isDefault: false,
@@ -50,7 +50,7 @@ const ALL_ENGINES: EngineManifest[] = [
     icon: "BarChart3",
     accentColor: "#ec4899",
     accentColorName: "pink",
-    status: "coming-soon",
+    status: "coming-soon" as const,
     order: 4,
     route: "/engines/sales",
     isDefault: false,
@@ -63,12 +63,12 @@ const ALL_ENGINES: EngineManifest[] = [
     icon: "Layers",
     accentColor: "#3b82f6",
     accentColorName: "blue",
-    status: "coming-soon",
+    status: "coming-soon" as const,
     order: 5,
     route: "/engines/product",
     isDefault: false,
   },
-].sort((a, b) => a.order - b.order);
+] satisfies EngineManifest[]).sort((a, b) => a.order - b.order);
 
 export function getEngineRegistry(): EngineManifest[] {
   return ALL_ENGINES;

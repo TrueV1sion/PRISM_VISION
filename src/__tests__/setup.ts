@@ -1,10 +1,10 @@
 import { beforeEach, afterEach, vi } from "vitest";
-import { resetPrismaMock } from "@/__mocks__/prisma";
+import { resetDbMock } from "@/__mocks__/prisma";
 import { resetAnthropicMock } from "@/__mocks__/anthropic";
 import { resetMCPMock } from "@/__mocks__/mcp";
 
 beforeEach(() => {
-  resetPrismaMock();
+  resetDbMock();
   resetAnthropicMock();
   resetMCPMock();
 });

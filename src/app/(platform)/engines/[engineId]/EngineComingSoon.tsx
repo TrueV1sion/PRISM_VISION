@@ -10,7 +10,7 @@ const iconCache = new Map<string, LucideIcon>();
 
 function getIcon(name: string): LucideIcon {
   if (iconCache.has(name)) return iconCache.get(name)!;
-  const icon = (LucideIcons as Record<string, LucideIcon>)[name] || LucideIcons.Hexagon;
+  const icon = (LucideIcons as unknown as Record<string, LucideIcon>)[name] || LucideIcons.Hexagon;
   iconCache.set(name, icon);
   return icon;
 }
