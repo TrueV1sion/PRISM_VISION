@@ -16,6 +16,9 @@ export type {
   PipelineEvent,
 } from "./pipeline/types";
 
+// Re-export engine types
+export type { EngineId, EngineManifest } from "./engines/types";
+
 // ─── App Phases ─────────────────────────────────────────────
 
 export type Phase =
