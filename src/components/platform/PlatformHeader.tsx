@@ -1,5 +1,6 @@
 "use client";
 
+import { createElement } from "react";
 import { usePathname } from "next/navigation";
 import { Search, Bell, Layers, Clock, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
@@ -9,8 +10,18 @@ import { getEngineById } from "@/lib/engines/registry";
 import * as LucideIcons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+const iconCache = new Map<string, LucideIcon>();
+
 function getIcon(name: string): LucideIcon {
-  return (LucideIcons as Record<string, LucideIcon>)[name] || LucideIcons.Hexagon;
+  const cached = iconCache.get(name);
+  if (cached) return cached;
+  const icon = (LucideIcons as Record<string, LucideIcon>)[name] || LucideIcons.Hexagon;
+  iconCache.set(name, icon);
+  return icon;
+}
+
+function renderIcon(name: string, className?: string, style?: React.CSSProperties) {
+  return createElement(getIcon(name), { className, style });
 }
 
 export default function PlatformHeader() {
@@ -32,10 +43,7 @@ export default function PlatformHeader() {
       <div className="flex items-center gap-3 min-w-0">
         {engine && (
           <div className="flex items-center gap-2 min-w-0">
-            {(() => {
-              const Icon = getIcon(engine.icon);
-              return <Icon className="w-4 h-4 shrink-0" style={{ color: engine.accentColor }} />;
-            })()}
+            {renderIcon(engine.icon, "w-4 h-4 shrink-0", { color: engine.accentColor })}
             <span className="text-sm font-semibold text-white truncate">{engine.name}</span>
           </div>
         )}
