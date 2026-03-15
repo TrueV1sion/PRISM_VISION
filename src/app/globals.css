@@ -47,3 +47,26 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 }
+
+/* ─── Engine Color Scoping ───────────────────────────────── */
+
+:root {
+  --engine-accent: #06b6d4;
+  --sidebar-width: 256px;
+  --sidebar-collapsed-width: 64px;
+}
+
+[data-engine="command-center"] { --engine-accent: #06b6d4; }
+[data-engine="ma"]              { --engine-accent: #8b5cf6; }
+[data-engine="finance"]         { --engine-accent: #10b981; }
+[data-engine="regulatory"]      { --engine-accent: #f59e0b; }
+[data-engine="sales"]           { --engine-accent: #ec4899; }
+[data-engine="product"]         { --engine-accent: #3b82f6; }
+
+/* ─── Sidebar Utilities ──────────────────────────────────── */
+
+.sidebar-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  margin: 0.5rem 0;
+}
