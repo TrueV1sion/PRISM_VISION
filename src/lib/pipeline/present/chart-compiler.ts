@@ -20,6 +20,12 @@ const CHART_COLORS = [
 const DONUT_RADIUS = 80;
 const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS; // 502.6548...
 
+let chartIdCounter = 0;
+
+function nextChartId(prefix: string): string {
+  return `${prefix}-${++chartIdCounter}`;
+}
+
 export function compileCharts(dataPoints: DataPoint[]): ChartData[] {
   const results: ChartData[] = [];
 
@@ -288,15 +294,18 @@ function compileLine(points: DataPoint[]): LineChartData {
     .map(p => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="var(--accent-bright)" />`)
     .join("\n      ");
 
+  // Generate unique clipPath ID for this chart instance
+  const clipPathId = nextChartId("line-reveal");
+
   const svgFragment = `<svg class="line-chart" viewBox="0 0 ${svgWidth} ${svgHeight}" style="max-width:100%">
   <defs>
-    <clipPath id="line-reveal">
+    <clipPath id="${clipPathId}">
       <rect class="clip-rect" x="0" y="0" width="0" height="${svgHeight}" />
     </clipPath>
   </defs>
   <polyline points="${pointsStr}"
     fill="none" stroke="var(--accent-bright)" stroke-width="2.5"
-    clip-path="url(#line-reveal)" />
+    clip-path="url(#${clipPathId})" />
   <g class="data-points">
       ${dotCircles}
   </g>
