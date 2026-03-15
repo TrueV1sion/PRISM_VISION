@@ -37,6 +37,9 @@ model Run {
   memoryBusSnapshots   MemoryBusSnapshot[]
   irGraph              IrGraph?
   presentationQuality  PresentationQuality?
+  toolCallLogs         ToolCallLog[]
+  enrichedMetrics      EnrichedMetric[]
+  agentDataRefs        AgentDataRef[]
 }
 
 // ─── Dimension ───────────────────────────────────────────
@@ -197,4 +200,87 @@ model PresentationQuality {
   createdAt           DateTime @default(now())
   runId               String   @unique
   run                 Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+}
+
+// ─── ToolCallLog ──────────────────────────────────────────
+// Captures raw MCP tool call inputs/outputs during DEPLOY agents' execution
+model ToolCallLog {
+  id            String   @id @default(cuid())
+  runId         String
+  agentId       String
+  mcpServer     String
+  toolName      String
+  toolParams    Json
+  rawResponse   Json
+  responseBytes Int
+  latencyMs     Int
+  capturedAt    DateTime @default(now())
+  dataDomain    String?
+  entityHints   String[]
+
+  run             Run              @relation(fields: [runId], references: [id], onDelete: Cascade)
+  enrichedMetrics EnrichedMetric[]
+
+  @@index([runId])
+  @@index([mcpServer])
+  @@index([dataDomain])
+  @@map("tool_call_log")
+}
+
+// ─── EnrichedMetric ───────────────────────────────────────
+// Enriched/normalized metrics extracted from tool call responses
+model EnrichedMetric {
+  id           String   @id @default(cuid())
+  runId        String
+  sourceCallId String?
+  dataShape    String
+  metricName   String
+  values       Json
+  computed     Json
+  pointCount   Int
+  densityTier  String
+  entityId     String?
+  sourceLabel  String
+  enrichedAt   DateTime @default(now())
+
+  run        Run          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  sourceCall ToolCallLog? @relation(fields: [sourceCallId], references: [id], onDelete: SetNull)
+
+  @@index([runId])
+  @@index([dataShape])
+  @@index([entityId])
+  @@map("enriched_metrics")
+}
+
+// ─── EntityRegistry ───────────────────────────────────────
+// Canonical entity deduplication registry
+model EntityRegistry {
+  id            String   @id @default(cuid())
+  canonicalName String
+  entityType    String
+  identifiers   Json
+  aliases       String[]
+  firstSeenAt   DateTime @default(now())
+  lastSeenAt    DateTime @default(now())
+
+  @@unique([canonicalName, entityType])
+  @@map("entity_registry")
+}
+
+// ─── AgentDataRef ─────────────────────────────────────────
+// Links agent findings to their source data (tool calls)
+model AgentDataRef {
+  id           String   @id @default(cuid())
+  runId        String
+  agentId      String
+  findingIndex Int
+  toolCallId   String?
+  relevance    String
+  dataTypeHint String?
+  annotation   String?
+  createdAt    DateTime @default(now())
+
+  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@map("agent_data_refs")
 }
