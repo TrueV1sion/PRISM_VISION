@@ -7,23 +7,41 @@
  * - loadSettings returns defaults on database error
  * - saveSettings upserts settings as JSON with correct args
  *
- * Uses prismaMock from @/__mocks__/prisma for Prisma client mocking.
+ * Uses vi.mock to stub @/lib/db.
  */
 
-import { describe, it, expect } from "vitest";
-import { prismaMock } from "@/__mocks__/prisma";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Create mock functions for the db methods we use
+const mockFindUnique = vi.fn();
+const mockUpsert = vi.fn();
+
+vi.mock("@/lib/db", () => ({
+  db: {
+    settings: {
+      findUnique: (...args: unknown[]) => mockFindUnique(...args),
+      upsert: (...args: unknown[]) => mockUpsert(...args),
+    },
+  },
+}));
+
 import { loadSettings, saveSettings, DEFAULT_SETTINGS, type SettingsState } from "@/lib/settings-store";
+
+beforeEach(() => {
+  mockFindUnique.mockReset();
+  mockUpsert.mockReset();
+});
 
 describe("loadSettings", () => {
   it("returns defaults when no row exists", async () => {
-    prismaMock.settings.findUnique.mockResolvedValue(null);
+    mockFindUnique.mockResolvedValue(null);
 
     const result = await loadSettings();
     expect(result).toEqual(DEFAULT_SETTINGS);
   });
 
   it("returns a fresh copy (not the same reference as DEFAULT_SETTINGS)", async () => {
-    prismaMock.settings.findUnique.mockResolvedValue(null);
+    mockFindUnique.mockResolvedValue(null);
 
     const result = await loadSettings();
     expect(result).not.toBe(DEFAULT_SETTINGS);
@@ -36,12 +54,12 @@ describe("loadSettings", () => {
       temperature: 0.9,
     };
 
-    prismaMock.settings.findUnique.mockResolvedValue({
+    mockFindUnique.mockResolvedValue({
       id: "default",
       data: JSON.stringify(partialSettings),
       onboardingDismissed: false,
       hasCompletedTour: false,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     });
 
     const result = await loadSettings();
@@ -66,12 +84,12 @@ describe("loadSettings", () => {
       maxAgents: 16,
     };
 
-    prismaMock.settings.findUnique.mockResolvedValue({
+    mockFindUnique.mockResolvedValue({
       id: "default",
       data: JSON.stringify(fullSettings),
       onboardingDismissed: false,
       hasCompletedTour: false,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     });
 
     const result = await loadSettings();
@@ -79,7 +97,7 @@ describe("loadSettings", () => {
   });
 
   it("returns defaults on database error", async () => {
-    prismaMock.settings.findUnique.mockRejectedValue(
+    mockFindUnique.mockRejectedValue(
       new Error("Database connection failed")
     );
 
@@ -88,13 +106,11 @@ describe("loadSettings", () => {
   });
 
   it("calls findUnique with the correct SETTINGS_ID", async () => {
-    prismaMock.settings.findUnique.mockResolvedValue(null);
+    mockFindUnique.mockResolvedValue(null);
 
     await loadSettings();
 
-    expect(prismaMock.settings.findUnique).toHaveBeenCalledWith({
-      where: { id: "default" },
-    });
+    expect(mockFindUnique).toHaveBeenCalledWith("default");
   });
 });
 
@@ -106,20 +122,18 @@ describe("saveSettings", () => {
       temperature: 0.5,
     };
 
-    prismaMock.settings.upsert.mockResolvedValue({
+    mockUpsert.mockResolvedValue({
       id: "default",
       data: JSON.stringify(settings),
       onboardingDismissed: false,
       hasCompletedTour: false,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     });
 
     const result = await saveSettings(settings);
 
-    expect(prismaMock.settings.upsert).toHaveBeenCalledWith({
-      where: { id: "default" },
-      update: { data: JSON.stringify(settings) },
-      create: { id: "default", data: JSON.stringify(settings) },
+    expect(mockUpsert).toHaveBeenCalledWith("default", {
+      data: JSON.stringify(settings),
     });
 
     expect(result).toEqual(settings);
@@ -128,12 +142,12 @@ describe("saveSettings", () => {
   it("returns the same settings object that was passed in", async () => {
     const settings: SettingsState = { ...DEFAULT_SETTINGS };
 
-    prismaMock.settings.upsert.mockResolvedValue({
+    mockUpsert.mockResolvedValue({
       id: "default",
       data: JSON.stringify(settings),
       onboardingDismissed: false,
       hasCompletedTour: false,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     });
 
     const result = await saveSettings(settings);
@@ -143,18 +157,18 @@ describe("saveSettings", () => {
   it("serializes the full settings object to JSON", async () => {
     const settings: SettingsState = { ...DEFAULT_SETTINGS };
 
-    prismaMock.settings.upsert.mockResolvedValue({
+    mockUpsert.mockResolvedValue({
       id: "default",
       data: JSON.stringify(settings),
       onboardingDismissed: false,
       hasCompletedTour: false,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     });
 
     await saveSettings(settings);
 
-    const callArgs = prismaMock.settings.upsert.mock.calls[0][0];
-    const serialized = callArgs.create.data;
+    const callArgs = mockUpsert.mock.calls[0];
+    const serialized = callArgs[1].data;
 
     // Verify the serialized JSON can be parsed back
     const parsed = JSON.parse(serialized as string);
