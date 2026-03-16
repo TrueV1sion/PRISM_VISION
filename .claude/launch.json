@@ -1,0 +1,101 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "next-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "mcp-openfda",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/openfda-mcp-server && TRANSPORT=http PORT=3010 npx tsx watch src/index.ts"],
+      "port": 3010
+    },
+    {
+      "name": "mcp-sec-edgar",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/sec-edgar-mcp-server && MCP_TRANSPORT=http MCP_PORT=3011 npx tsx watch src/index.ts"],
+      "port": 3011
+    },
+    {
+      "name": "mcp-federal-register",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/federal-register-mcp-server && npx tsx watch src/index.ts --http --port=3012"],
+      "port": 3012
+    },
+    {
+      "name": "mcp-uspto-patents",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/uspto-patents-mcp-server && npx tsx watch src/index.ts --http --port=3013"],
+      "port": 3013
+    },
+    {
+      "name": "mcp-congress-gov",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/congress-gov-mcp-server && npx tsx watch src/index.ts --http --port=3014"],
+      "port": 3014
+    },
+    {
+      "name": "mcp-bls-data",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/bls-data-mcp-server && PORT=3015 npx tsx watch src/index.ts --http"],
+      "port": 3015
+    },
+    {
+      "name": "mcp-census-bureau",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/census-bureau-mcp-server && npx tsx watch src/index.ts --http --port=3016"],
+      "port": 3016
+    },
+    {
+      "name": "mcp-who-gho",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/who-gho-mcp-server && TRANSPORT=http PORT=3017 npx tsx watch src/index.ts"],
+      "port": 3017
+    },
+    {
+      "name": "mcp-gpo-govinfo",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/gpo-govinfo-mcp-server && TRANSPORT=http PORT=3018 npx tsx watch src/index.ts"],
+      "port": 3018
+    },
+    {
+      "name": "mcp-cbo",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/cbo-mcp-server && TRANSPORT=http PORT=3019 npx tsx watch src/index.ts"],
+      "port": 3019
+    },
+    {
+      "name": "mcp-oecd-health",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/oecd-health-mcp-server && TRANSPORT=http PORT=3020 npx tsx watch src/index.ts"],
+      "port": 3020
+    },
+    {
+      "name": "mcp-sam-gov",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/sam-gov-mcp-server && TRANSPORT=http PORT=3021 npx tsx watch src/index.ts"],
+      "port": 3021
+    },
+    {
+      "name": "mcp-fda-orange-book",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/fda-orange-book-mcp-server && npx tsx watch src/index.ts --http --port=3022"],
+      "port": 3022
+    },
+    {
+      "name": "mcp-grants-gov",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/grants-gov-mcp-server && TRANSPORT=http PORT=3023 npx tsx watch src/index.ts"],
+      "port": 3023
+    },
+    {
+      "name": "mcp-ahrq-hcup",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mcp-servers/ahrq-hcup-mcp-server && TRANSPORT=http PORT=3024 npx tsx watch src/index.ts"],
+      "port": 3024
+    }
+  ]
+}
