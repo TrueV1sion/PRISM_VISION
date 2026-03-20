@@ -35,6 +35,7 @@ const searchWhoIndicators: DataSourceTool = {
   },
   layer: 2,
   sources: ["who-gho"],
+  routingTags: ["global-health", "epidemiology", "population", "macro"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await whoGhoClient.listIndicators({
       keyword: input.keyword as string | undefined,
@@ -98,6 +99,7 @@ const getWhoIndicatorData: DataSourceTool = {
   },
   layer: 2,
   sources: ["who-gho"],
+  routingTags: ["global-health", "epidemiology", "population", "macro"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const indicatorCode = input.indicator_code as string;
 

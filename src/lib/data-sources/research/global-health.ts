@@ -39,6 +39,7 @@ export const globalHealthResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["who-gho", "oecd-health", "ahrq-hcup"],
+  routingTags: ["global-health", "epidemiology", "population", "macro", "who"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const healthTopic = input.query as string;

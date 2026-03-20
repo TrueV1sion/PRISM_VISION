@@ -40,6 +40,7 @@ export const legislativeStatusResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["congress-gov", "gpo-govinfo", "cbo"],
+  routingTags: ["legislative", "policy", "government", "congressional", "regulatory"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const policyTopic = input.query as string;

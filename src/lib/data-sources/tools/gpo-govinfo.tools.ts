@@ -38,6 +38,7 @@ const searchGovinfo: DataSourceTool = {
   },
   layer: 2,
   sources: ["govinfo"],
+  routingTags: ["legislative", "government", "regulatory", "policy"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await gpoGovinfoClient.search({
       query: input.query as string,
@@ -91,6 +92,7 @@ const getGovinfoDocument: DataSourceTool = {
   },
   layer: 2,
   sources: ["govinfo"],
+  routingTags: ["legislative", "government", "regulatory", "policy"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const packageId = input.package_id as string;
     const response = await gpoGovinfoClient.getPackageSummary(packageId);

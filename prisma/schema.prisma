@@ -298,3 +298,162 @@ model AgentDataRef {
 
   @@map("agent_data_refs")
 }
+
+// ═══════════════════════════════════════════════════════════
+// Phase 0A: Expansion Foundation Models
+// ═══════════════════════════════════════════════════════════
+
+// ─── FeedSource ─────────────────────────────────────────────
+// RSS/Atom feed registry for continuous news ingestion
+model FeedSource {
+  id               String    @id @default(cuid())
+  url              String    @unique
+  name             String
+  feedType         String    @default("rss")  // rss | atom | google_news_proxy
+  category         String                      // e.g. "healthcare", "ma", "regulatory", "vc"
+  subcategory      String?                     // e.g. "drug-approvals", "cms-updates"
+  pollIntervalHours Int      @default(4)
+  enabled          Boolean   @default(true)
+  lastPolledAt     DateTime?
+  lastError        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  items FeedItem[]
+
+  @@index([category])
+  @@index([enabled, lastPolledAt])
+  @@map("feed_sources")
+}
+
+// ─── FeedItem ───────────────────────────────────────────────
+// Stored feed articles with extracted entities and signals
+model FeedItem {
+  id           String   @id @default(cuid())
+  sourceId     String
+  title        String
+  url          String
+  contentHash  String                          // SHA-256 of (title + url) for dedup
+  summary      String?                         // Feed description/summary
+  author       String?
+  entities     String[] @default([])           // Extracted entity names
+  signals      String[] @default([])           // Signal classifications
+  tags         String[] @default([])           // Keyword tags
+  publishedAt  DateTime
+  ingestedAt   DateTime @default(now())
+
+  source FeedSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceId, contentHash])
+  @@index([publishedAt])
+  @@index([sourceId])
+  @@map("feed_items")
+}
+
+// ─── DatasetSource ──────────────────────────────────────────
+// Government bulk dataset registry (CMS, HHS, etc.)
+model DatasetSource {
+  id             String    @id @default(cuid())
+  url            String    @unique
+  name           String
+  format         String    @default("csv")     // csv | json | xlsx | api
+  category       String                        // e.g. "cms", "hhs", "dea", "fda"
+  entityKeyField String                        // Primary key field name (e.g. "NPI", "CCN")
+  compareFields  String[]  @default([])        // Fields to track for diffs
+  pollSchedule   String    @default("weekly")  // daily | weekly | monthly | quarterly
+  enabled        Boolean   @default(true)
+  lastPolledAt   DateTime?
+  lastError      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  snapshots DatasetSnapshot[]
+
+  @@index([category])
+  @@map("dataset_sources")
+}
+
+// ─── DatasetSnapshot ────────────────────────────────────────
+// Point-in-time snapshots of bulk government datasets
+model DatasetSnapshot {
+  id          String   @id @default(cuid())
+  sourceId    String
+  blobUrl     String                           // Vercel Blob URL for raw data
+  recordCount Int      @default(0)
+  sizeBytes   Int      @default(0)
+  metadata    String   @default("{}")          // JSON: column stats, date range, etc.
+  snapshotAt  DateTime @default(now())
+
+  source DatasetSource  @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  deltas DatasetDelta[]
+
+  @@index([sourceId, snapshotAt])
+  @@map("dataset_snapshots")
+}
+
+// ─── DatasetDelta ───────────────────────────────────────────
+// Diff records between consecutive dataset snapshots
+model DatasetDelta {
+  id         String   @id @default(cuid())
+  snapshotId String
+  changeType String                            // added | removed | modified
+  entityKey  String                            // Value of the entityKeyField
+  fieldName  String                            // Which field changed
+  oldValue   String?
+  newValue   String?
+  detectedAt DateTime @default(now())
+
+  snapshot DatasetSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@index([snapshotId])
+  @@index([entityKey])
+  @@index([changeType])
+  @@map("dataset_deltas")
+}
+
+// ─── Signal ─────────────────────────────────────────────────
+// Cross-source correlation signals detected by SIGNAL-CORRELATOR / SENTINEL
+model Signal {
+  id          String   @id @default(cuid())
+  signalType  String                           // e.g. "ma_indicator", "regulatory_shift", "market_entry"
+  title       String
+  description String
+  sources     String[] @default([])            // Source references (feed item IDs, delta IDs, etc.)
+  entityRefs  String[] @default([])            // Related entity keys (company names, NPIs, etc.)
+  confidence  Float    @default(0.5)           // 0.0 - 1.0 Bayesian confidence
+  severity    String   @default("medium")      // low | medium | high | critical
+  pattern     String?                          // Which correlation pattern matched
+  metadata    String   @default("{}")          // JSON: pattern-specific data
+  detectedAt  DateTime @default(now())
+  expiresAt   DateTime?                        // Signal relevance expiry
+
+  alerts Alert[]
+
+  @@index([signalType])
+  @@index([severity])
+  @@index([detectedAt])
+  @@map("signals")
+}
+
+// ─── Alert ──────────────────────────────────────────────────
+// SENTINEL notifications triggered by signals or direct detection
+model Alert {
+  id           String    @id @default(cuid())
+  signalId     String?
+  alertType    String                          // signal | threshold | anomaly | scheduled
+  title        String
+  message      String
+  severity     String    @default("medium")    // low | medium | high | critical
+  acknowledged Boolean   @default(false)
+  acknowledgedBy String?
+  acknowledgedAt DateTime?
+  metadata     String    @default("{}")        // JSON: alert-specific context
+  createdAt    DateTime  @default(now())
+
+  signal Signal? @relation(fields: [signalId], references: [id], onDelete: SetNull)
+
+  @@index([alertType])
+  @@index([severity, acknowledged])
+  @@index([createdAt])
+  @@map("alerts")
+}

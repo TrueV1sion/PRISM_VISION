@@ -32,6 +32,7 @@ export const coveragePolicyResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["cms_coverage", "icd10"],
+  routingTags: ["coverage", "cms", "payer", "policy", "reimbursement"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const query = input.query as string;

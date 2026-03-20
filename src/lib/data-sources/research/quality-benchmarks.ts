@@ -34,6 +34,7 @@ export const qualityBenchmarksResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["ahrq-hcup", "cms_coverage", "who-gho"],
+  routingTags: ["quality", "benchmarking", "cms", "hospital", "metrics"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const query = input.query as string;

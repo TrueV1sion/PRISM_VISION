@@ -32,6 +32,7 @@ export const clinicalEvidenceResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["pubmed", "clinical_trials", "biorxiv"],
+  routingTags: ["clinical", "evidence", "research", "trials", "efficacy"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const query = input.query as string;

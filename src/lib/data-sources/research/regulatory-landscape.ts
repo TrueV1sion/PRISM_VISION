@@ -35,6 +35,7 @@ export const regulatoryLandscapeResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["federal-register", "congress-gov", "gpo-govinfo", "cms_coverage"],
+  routingTags: ["regulatory", "policy", "compliance", "rulemaking", "government"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const query = input.query as string;

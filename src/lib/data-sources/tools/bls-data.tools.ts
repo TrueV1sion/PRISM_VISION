@@ -53,6 +53,7 @@ const searchBlsSeries: DataSourceTool = {
   },
   layer: 2,
   sources: ["bls"],
+  routingTags: ["economic", "labor", "market", "macro", "workforce"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const seriesIds = input.series_ids as string[];
     const startYear = input.start_year as number;
@@ -123,6 +124,7 @@ const getHealthcareCpi: DataSourceTool = {
   },
   layer: 2,
   sources: ["bls"],
+  routingTags: ["economic", "labor", "market", "macro", "workforce"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const currentYear = new Date().getFullYear();
     const startYear = (input.start_year as number | undefined) ?? currentYear - 5;

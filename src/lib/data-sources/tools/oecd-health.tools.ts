@@ -43,6 +43,7 @@ const searchOecdIndicators: DataSourceTool = {
   },
   layer: 2,
   sources: ["oecd-health"],
+  routingTags: ["global-health", "macro", "benchmarking", "quality"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const indicator = input.indicator as string;
     const countries = input.countries as string[] | undefined;
@@ -120,6 +121,7 @@ const getOecdHealthExpenditures: DataSourceTool = {
   },
   layer: 2,
   sources: ["oecd-health"],
+  routingTags: ["global-health", "macro", "benchmarking", "quality"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const countries = input.countries as string[] | undefined;
     const startYear = input.start_year as number | undefined;

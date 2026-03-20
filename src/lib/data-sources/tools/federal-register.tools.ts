@@ -45,6 +45,7 @@ const searchFederalRegister: DataSourceTool = {
   },
   layer: 2,
   sources: ["federal-register"],
+  routingTags: ["regulatory", "policy", "government", "compliance", "rulemaking"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await federalRegisterClient.searchDocuments({
       query: input.query as string | undefined,
@@ -104,6 +105,7 @@ const getFederalRegisterDocument: DataSourceTool = {
   },
   layer: 2,
   sources: ["federal-register"],
+  routingTags: ["regulatory", "policy", "government", "compliance", "rulemaking"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await federalRegisterClient.getDocument(
       input.document_number as string,

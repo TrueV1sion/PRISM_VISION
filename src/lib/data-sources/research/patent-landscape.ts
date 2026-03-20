@@ -37,6 +37,7 @@ export const patentLandscapeResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["uspto-patents", "fda-orange-book"],
+  routingTags: ["patent", "ip", "innovation", "technology", "competitive"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const queryTerm = input.query as string;

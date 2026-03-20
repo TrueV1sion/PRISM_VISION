@@ -39,6 +39,7 @@ export const companyPositionResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["sec-edgar", "sam-gov", "uspto-patents"],
+  routingTags: ["financial", "corporate", "competitive", "ma", "valuation"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const companyName = input.query as string;

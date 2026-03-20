@@ -49,6 +49,7 @@ const searchCongressBills: DataSourceTool = {
   },
   layer: 2,
   sources: ["congress-gov"],
+  routingTags: ["legislative", "policy", "government", "regulatory"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await congressGovClient.searchBills({
       query: input.query as string | undefined,
@@ -121,6 +122,7 @@ const getCongressBill: DataSourceTool = {
   },
   layer: 2,
   sources: ["congress-gov"],
+  routingTags: ["legislative", "policy", "government", "regulatory"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const congress = input.congress as number;
     const billType = input.bill_type as string;

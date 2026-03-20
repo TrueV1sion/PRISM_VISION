@@ -15,6 +15,12 @@ export const EngineManifestSchema = z.object({
   order: z.number().int().min(0),
   route: z.string(),
   isDefault: z.boolean(),
+  /** Archetype IDs this engine scopes to during pipeline execution */
+  archetypes: z.array(z.string()).optional(),
+  /** Pre-filled example query shown in the engine dashboard */
+  defaultQuery: z.string().optional(),
+  /** Data source routing tags this engine focuses on */
+  dataSourceTags: z.array(z.string()).optional(),
 });
 
 export type EngineManifest = z.infer<typeof EngineManifestSchema>;

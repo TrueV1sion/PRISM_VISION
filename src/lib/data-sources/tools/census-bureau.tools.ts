@@ -45,6 +45,7 @@ const searchCensusData: DataSourceTool = {
   },
   layer: 2,
   sources: ["census-bureau"],
+  routingTags: ["demographic", "population", "market", "macro", "geographic"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const year = input.year as number;
     const variables = input.variables as string[];
@@ -121,6 +122,7 @@ const getHealthInsurance: DataSourceTool = {
   },
   layer: 2,
   sources: ["census-bureau"],
+  routingTags: ["demographic", "population", "market", "macro", "geographic"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await censusBureauClient.getSahieData({
       year: input.year as number | undefined,

@@ -40,6 +40,7 @@ const searchSecFilings: DataSourceTool = {
   },
   layer: 2,
   sources: ["sec-edgar"],
+  routingTags: ["financial", "corporate", "ma", "competitive", "disclosure"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await secEdgarClient.searchFilings({
       query: input.query as string,
@@ -102,6 +103,7 @@ const getCompanyFacts: DataSourceTool = {
   },
   layer: 2,
   sources: ["sec-edgar"],
+  routingTags: ["financial", "corporate", "competitive", "metrics"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await secEdgarClient.getCompanyFacts({
       cik: input.cik as string,
@@ -158,6 +160,7 @@ const searchSecCompanies: DataSourceTool = {
   },
   layer: 2,
   sources: ["sec-edgar"],
+  routingTags: ["financial", "corporate", "competitive", "disclosure"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await secEdgarClient.searchCompany({
       query: input.query as string,

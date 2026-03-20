@@ -110,11 +110,12 @@ describe("getActiveEngines", () => {
     expect(hiddenEngines.length).toBe(0);
   });
 
-  it("includes active and coming-soon engines", () => {
+  it("includes all active engines", () => {
     const active = getActiveEngines();
     const statuses = new Set(active.map((e) => e.status));
     expect(statuses.has("active")).toBe(true);
-    expect(statuses.has("coming-soon")).toBe(true);
+    // All 6 engines are now active (Phase 7: Engine Activation)
+    expect(active.length).toBe(6);
   });
 
   it("returns engines sorted by order", () => {
@@ -122,5 +123,68 @@ describe("getActiveEngines", () => {
     for (let i = 1; i < active.length; i++) {
       expect(active[i].order).toBeGreaterThanOrEqual(active[i - 1].order);
     }
+  });
+});
+
+describe("Engine Activation (Phase 7)", () => {
+  it("all 5 domain engines are active", () => {
+    const domainIds = ["ma", "finance", "regulatory", "sales", "product"];
+    for (const id of domainIds) {
+      const engine = getEngineById(id);
+      expect(engine).toBeDefined();
+      expect(engine!.status).toBe("active");
+    }
+  });
+
+  it("each domain engine has archetypes defined", () => {
+    const domainIds = ["ma", "finance", "regulatory", "sales", "product"];
+    for (const id of domainIds) {
+      const engine = getEngineById(id);
+      expect(engine!.archetypes).toBeDefined();
+      expect(engine!.archetypes!.length).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("each domain engine has a defaultQuery", () => {
+    const domainIds = ["ma", "finance", "regulatory", "sales", "product"];
+    for (const id of domainIds) {
+      const engine = getEngineById(id);
+      expect(engine!.defaultQuery).toBeDefined();
+      expect(engine!.defaultQuery!.length).toBeGreaterThan(20);
+    }
+  });
+
+  it("each domain engine has dataSourceTags", () => {
+    const domainIds = ["ma", "finance", "regulatory", "sales", "product"];
+    for (const id of domainIds) {
+      const engine = getEngineById(id);
+      expect(engine!.dataSourceTags).toBeDefined();
+      expect(engine!.dataSourceTags!.length).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("M&A engine routes to M&A-specific archetypes", () => {
+    const ma = getEngineById("ma")!;
+    expect(ma.archetypes).toContain("MA-SIGNAL-HUNTER");
+    expect(ma.archetypes).toContain("MA-INTEGRATOR");
+    expect(ma.archetypes).toContain("DILIGENCE-AUDITOR");
+  });
+
+  it("Regulatory engine routes to policy archetypes", () => {
+    const reg = getEngineById("regulatory")!;
+    expect(reg.archetypes).toContain("REGULATORY-RADAR");
+    expect(reg.archetypes).toContain("LEGISLATIVE-PIPELINE");
+    expect(reg.archetypes).toContain("INFLUENCE-MAPPER");
+  });
+
+  it("new engine fields validate with Zod schema", () => {
+    const ma = getEngineById("ma")!;
+    const result = EngineManifestSchema.safeParse(ma);
+    expect(result.success).toBe(true);
+  });
+
+  it("command center has no archetype constraints", () => {
+    const cc = getEngineById("command-center")!;
+    expect(cc.archetypes).toBeUndefined();
   });
 });

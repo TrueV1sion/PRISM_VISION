@@ -1,6 +1,7 @@
 import { executePipeline } from "@/lib/pipeline/executor";
 import { prisma } from "@/lib/prisma";
 import { pipelineRateLimiter } from "@/lib/rate-limit";
+import { getEngineById } from "@/lib/engines/registry";
 import type { PipelineEvent, AutonomyMode } from "@/lib/pipeline/types";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,7 @@ export async function GET(request: Request) {
   const query = searchParams.get("query");
   const runId = searchParams.get("runId");
   const autonomyMode = (searchParams.get("autonomyMode") ?? "guided") as AutonomyMode;
+  const engineId = searchParams.get("engineId");
 
   if (!query || !runId) {
     return new Response(
@@ -208,10 +210,16 @@ export async function GET(request: Request) {
           update: { query, status: "INITIALIZE" },
         });
 
+        // Resolve engine-scoped archetype constraints if engineId provided
+        const constrainToArchetypes = engineId
+          ? getEngineById(engineId)?.archetypes
+          : undefined;
+
         await executePipeline({
           query,
           runId,
           autonomyMode,
+          constrainToArchetypes,
           signal: abortController.signal,
           onEvent: handleEvent,
         });

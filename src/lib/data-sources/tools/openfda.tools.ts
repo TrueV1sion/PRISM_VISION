@@ -38,6 +38,7 @@ const searchAdverseEvents: DataSourceTool = {
   },
   layer: 2,
   sources: ["openfda"],
+  routingTags: ["drug-safety", "fda", "clinical", "risk", "pharmacovigilance"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await openfdaClient.searchAdverseEvents({
       drugName: input.drug_name as string | undefined,
@@ -101,6 +102,7 @@ const countAdverseEvents: DataSourceTool = {
   },
   layer: 2,
   sources: ["openfda"],
+  routingTags: ["drug-safety", "fda", "clinical", "risk", "pharmacovigilance"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await openfdaClient.countAdverseEvents({
       field: input.field as string,
@@ -155,6 +157,7 @@ const searchDrugLabels: DataSourceTool = {
   },
   layer: 2,
   sources: ["openfda"],
+  routingTags: ["drug-safety", "fda", "clinical", "regulatory", "labeling"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await openfdaClient.searchDrugLabels({
       brandName: input.brand_name as string | undefined,
@@ -217,6 +220,7 @@ const searchDrugRecalls: DataSourceTool = {
   },
   layer: 2,
   sources: ["openfda"],
+  routingTags: ["drug-safety", "fda", "regulatory", "risk", "quality"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await openfdaClient.searchRecalls({
       query: input.query as string | undefined,
@@ -274,6 +278,7 @@ const search510k: DataSourceTool = {
   },
   layer: 2,
   sources: ["openfda"],
+  routingTags: ["fda", "medtech", "device", "regulatory", "innovation"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await openfdaClient.search510k({
       query: input.query as string | undefined,
@@ -332,6 +337,7 @@ const searchDeviceEvents: DataSourceTool = {
   },
   layer: 2,
   sources: ["openfda"],
+  routingTags: ["fda", "medtech", "device", "risk", "clinical"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await openfdaClient.searchDeviceEvents({
       query: input.query as string | undefined,

@@ -73,6 +73,7 @@ export interface DataSourceTool {
   handler: (input: Record<string, unknown>, cache: ToolCache) => Promise<ToolResult>;
   layer: 2 | 3;
   sources: string[];
+  routingTags?: string[];  // Semantic tags for auto-routing via TagBasedRouter
 }
 
 export interface ToolResult {

@@ -35,6 +35,7 @@ export const competitiveIntelResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["sec-edgar", "uspto-patents", "openfda", "clinical_trials"],
+  routingTags: ["competitive", "corporate", "market", "strategic", "intelligence"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const query = input.query as string;

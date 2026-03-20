@@ -38,6 +38,7 @@ const searchGrants: DataSourceTool = {
   },
   layer: 2,
   sources: ["grants-gov"],
+  routingTags: ["funding", "government", "innovation", "research"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await grantsGovClient.searchOpportunities({
       keyword: input.keyword as string | undefined,
@@ -98,6 +99,7 @@ const getGrantDetail: DataSourceTool = {
   },
   layer: 2,
   sources: ["grants-gov"],
+  routingTags: ["funding", "government", "innovation", "research"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const opportunityId = input.opportunity_id as string;
     const response = await grantsGovClient.getOpportunity(opportunityId);

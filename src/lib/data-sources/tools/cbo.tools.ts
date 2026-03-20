@@ -34,6 +34,7 @@ const searchCboReports: DataSourceTool = {
   },
   layer: 2,
   sources: ["cbo"],
+  routingTags: ["fiscal", "legislative", "policy", "macro", "government"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const query = input.query as string;
     const limit = (input.limit as number | undefined) ?? 15;
@@ -97,6 +98,7 @@ const getCboCostEstimates: DataSourceTool = {
   },
   layer: 2,
   sources: ["cbo"],
+  routingTags: ["fiscal", "legislative", "policy", "macro", "government"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const limit = (input.limit as number | undefined) ?? 15;
 

@@ -38,6 +38,7 @@ export const marketDynamicsResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["bls-data", "census-bureau", "oecd-health"],
+  routingTags: ["market", "economic", "competitive", "macro", "financial"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const topic = input.query as string;

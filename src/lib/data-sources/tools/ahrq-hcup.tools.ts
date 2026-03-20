@@ -51,6 +51,7 @@ const searchHcupStatistics: DataSourceTool = {
   },
   layer: 2,
   sources: ["ahrq-hcup"],
+  routingTags: ["quality", "clinical", "hospital", "utilization", "benchmarking"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await ahrqHcupClient.searchAll({
       query: input.query as string,
@@ -133,6 +134,7 @@ const getHcupTopConditions: DataSourceTool = {
   },
   layer: 2,
   sources: ["ahrq-hcup"],
+  routingTags: ["quality", "clinical", "hospital", "utilization", "benchmarking"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const rankedBy = (input.ranked_by as "hospitalizations" | "aggregate_cost" | "mean_cost" | "mortality" | "los" | undefined) ?? "hospitalizations";
     const setting = (input.setting as "inpatient" | "emergency" | undefined) ?? "inpatient";

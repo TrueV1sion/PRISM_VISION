@@ -215,19 +215,29 @@ function getBlueprintJsonSchema(): Record<string, unknown> {
 export async function think(input: {
   query: string;
   urgency?: string;
+  /** When set, constrains archetype selection to this set (engine-scoped execution) */
+  constrainToArchetypes?: string[];
   onEvent?: (event: PipelineEvent) => void;
 }): Promise<Blueprint> {
-  const { query, urgency = "balanced", onEvent } = input;
+  const { query, urgency = "balanced", constrainToArchetypes, onEvent } = input;
 
   // Urgency multiplier per methodology-core.md
   const urgencyMultiplier =
     urgency === "speed" ? 0.7 : urgency === "thorough" ? 1.3 : 1.0;
 
+  // Build archetype constraint instruction if engine-scoped
+  const archetypeConstraint = constrainToArchetypes && constrainToArchetypes.length > 0
+    ? `\n\n## ARCHETYPE CONSTRAINT (Engine-Scoped Execution)
+You MUST only assign agents from this set of archetypes: ${constrainToArchetypes.join(", ")}.
+Do NOT use any archetype outside this list. This query is being executed within a specialized engine
+that has access only to these archetypes and their associated data sources.`
+    : "";
+
   const userPrompt = `Analyze this strategic query and produce a complete dimensional blueprint:
 
 "${query}"
 
-Urgency: ${urgency} (multiplier: ${urgencyMultiplier})
+Urgency: ${urgency} (multiplier: ${urgencyMultiplier})${archetypeConstraint}
 
 Decompose this into independent analytical dimensions. For each dimension:
 1. Justify WHY it qualifies (distinct data sources, lens, depth, standalone value)

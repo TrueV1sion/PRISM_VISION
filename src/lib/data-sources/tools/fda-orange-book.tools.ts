@@ -38,6 +38,7 @@ const searchOrangeBook: DataSourceTool = {
   },
   layer: 2,
   sources: ["fda-orange-book"],
+  routingTags: ["drug-safety", "fda", "patent", "exclusivity", "generic"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await fdaOrangeBookClient.searchProducts({
       brandName: input.brand_name as string | undefined,
@@ -105,6 +106,7 @@ const getOrangeBookPatents: DataSourceTool = {
   },
   layer: 2,
   sources: ["fda-orange-book"],
+  routingTags: ["drug-safety", "fda", "patent", "exclusivity", "generic"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const drugName = input.drug_name as string;
 

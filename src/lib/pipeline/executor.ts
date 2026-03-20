@@ -41,6 +41,8 @@ export interface PipelineInput {
   query: string;
   runId: string;
   autonomyMode?: AutonomyMode;
+  /** When set, THINK phase constrains archetype selection to this set (engine-scoped execution) */
+  constrainToArchetypes?: string[];
   signal?: AbortSignal;
   onEvent?: (event: PipelineEvent) => void;
 }
@@ -97,7 +99,7 @@ function buildQualityReport(
 export async function executePipeline(
   input: PipelineInput,
 ): Promise<IntelligenceManifest> {
-  const { query, runId, autonomyMode = "supervised", signal, onEvent } = input;
+  const { query, runId, autonomyMode = "supervised", constrainToArchetypes, signal, onEvent } = input;
   const startTime = new Date().toISOString();
   let totalTokens = 0;
   const costTracker = new CostTracker();
@@ -120,7 +122,7 @@ export async function executePipeline(
     emitEvent({ type: "phase_change", phase: "THINK", message: "Decomposing query into analytical dimensions..." });
 
     const blueprint = await withRetry(
-      () => think({ query, onEvent: emitEvent }),
+      () => think({ query, constrainToArchetypes, onEvent: emitEvent }),
       { maxRetries: 2, baseDelayMs: 2000, signal, label: "THINK" },
     );
 

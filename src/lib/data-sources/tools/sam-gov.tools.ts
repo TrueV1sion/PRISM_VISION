@@ -40,6 +40,7 @@ const searchSamOpportunities: DataSourceTool = {
   },
   layer: 2,
   sources: ["sam-gov"],
+  routingTags: ["government", "contracting", "corporate", "compliance"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await samGovClient.searchOpportunities({
       q: input.q as string | undefined,
@@ -103,6 +104,7 @@ const searchSamEntities: DataSourceTool = {
   },
   layer: 2,
   sources: ["sam-gov"],
+  routingTags: ["government", "contracting", "corporate", "compliance"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await samGovClient.searchEntities({
       legalBusinessName: input.legal_business_name as string | undefined,

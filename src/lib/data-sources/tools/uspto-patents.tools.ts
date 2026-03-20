@@ -40,6 +40,7 @@ const searchPatents: DataSourceTool = {
   },
   layer: 2,
   sources: ["uspto-patents"],
+  routingTags: ["innovation", "ip", "technology", "competitive", "patent"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await usptoPatentsClient.searchPatents({
       query: input.query as string | undefined,
@@ -106,6 +107,7 @@ const getPatent: DataSourceTool = {
   },
   layer: 2,
   sources: ["uspto-patents"],
+  routingTags: ["innovation", "ip", "technology", "competitive", "patent"],
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const response = await usptoPatentsClient.getPatent(input.patent_number as string);
 

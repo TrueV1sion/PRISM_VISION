@@ -33,6 +33,7 @@ export const providerLandscapeResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["npi_registry", "census-bureau"],
+  routingTags: ["provider", "hospital", "health-system", "geographic", "network"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const query = input.query as string;

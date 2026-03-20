@@ -1,0 +1,8 @@
+{
+  "crons": [
+    { "path": "/api/cron/feeds", "schedule": "0 */4 * * *" },
+    { "path": "/api/cron/datasets", "schedule": "0 3 * * 0" },
+    { "path": "/api/cron/health", "schedule": "0 */1 * * *" },
+    { "path": "/api/cron/sentinel", "schedule": "0 */6 * * *" }
+  ]
+}

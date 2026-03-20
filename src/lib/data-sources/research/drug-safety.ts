@@ -61,6 +61,7 @@ export const drugSafetyResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["openfda", "fda-orange-book"],
+  routingTags: ["drug-safety", "fda", "clinical", "pharmacovigilance", "risk"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const drugName = input.query as string;

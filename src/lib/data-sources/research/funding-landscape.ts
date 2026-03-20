@@ -37,6 +37,7 @@ export const fundingLandscapeResearchTool: DataSourceTool = {
   },
   layer: 3,
   sources: ["grants-gov", "sam-gov"],
+  routingTags: ["funding", "government", "grants", "research", "innovation"],
 
   handler: async (input: Record<string, unknown>, _cache: ToolCache): Promise<ToolResult> => {
     const queryTerm = input.query as string;
