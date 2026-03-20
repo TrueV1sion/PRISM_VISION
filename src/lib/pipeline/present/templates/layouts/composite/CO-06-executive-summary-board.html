@@ -1,0 +1,42 @@
+<!-- template: CO-06-executive-summary-board -->
+<!-- data_shapes: none -->
+<!-- density: structured executive summary -->
+
+<section class="slide {{slot:slide_class}}">
+  <div class="slide-inner">
+    {{#if slot:eyebrow}}
+    <div class="eyebrow anim">{{slot:eyebrow}}</div>
+    {{/if}}
+
+    <h2 class="slide-title anim d1">{{slot:headline}}</h2>
+    <p class="slide-subtitle anim d2">{{slot:subhead}}</p>
+
+    <div class="grid-2 anim d3">
+      <div class="callout">
+        <div class="callout-title">{{slot:thesis_label}}</div>
+        <p>{{slot:thesis_body}}</p>
+
+        {{#if slot:impact_1}}
+        <div class="stat-grid strategic-impact-grid">
+          {{component:stat-block-mini slot:impact_1}}
+          {{#if slot:impact_2}}
+          {{component:stat-block-mini slot:impact_2}}
+          {{/if}}
+        </div>
+        {{/if}}
+      </div>
+
+      <div class="summary-card-stack">
+        {{component:action-card slot:summary_1}}
+        {{component:action-card slot:summary_2}}
+        {{component:action-card slot:summary_3}}
+      </div>
+    </div>
+
+    {{#if slot:source}}
+    <div class="source-list anim d4">
+      {{component:source-citation slot:source}}
+    </div>
+    {{/if}}
+  </div>
+</section>

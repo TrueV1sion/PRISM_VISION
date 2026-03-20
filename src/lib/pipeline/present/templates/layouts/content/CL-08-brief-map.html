@@ -1,0 +1,41 @@
+<!-- template: CL-08-brief-map -->
+<!-- data_shapes: none -->
+<!-- density: structured executive navigation -->
+
+<section class="slide {{slot:slide_class}}">
+  <div class="slide-inner">
+    {{#if slot:eyebrow}}
+    <div class="eyebrow anim">{{slot:eyebrow}}</div>
+    {{/if}}
+
+    <h2 class="slide-title anim d1">{{slot:headline}}</h2>
+    <p class="slide-subtitle anim d2">{{slot:subhead}}</p>
+
+    <div class="callout anim d3">
+      <div class="callout-title">{{slot:callout_title}}</div>
+      <p>{{slot:callout_body}}</p>
+    </div>
+
+    <div class="grid-3 anim d4">
+      <div class="stat-card">
+        <div class="toc-group-header">{{slot:group_1_title}}</div>
+        <div class="toc-item"><div class="highlight">{{slot:group_1_item_1}}</div></div>
+        <div class="toc-item"><div class="highlight">{{slot:group_1_item_2}}</div></div>
+      </div>
+
+      <div class="stat-card">
+        <div class="toc-group-header">{{slot:group_2_title}}</div>
+        <div class="toc-item"><div class="highlight">{{slot:group_2_item_1}}</div></div>
+        <div class="toc-item"><div class="highlight">{{slot:group_2_item_2}}</div></div>
+      </div>
+
+      <div class="stat-card">
+        <div class="toc-group-header">{{slot:group_3_title}}</div>
+        <div class="toc-item"><div class="highlight">{{slot:group_3_item_1}}</div></div>
+        {{#if slot:group_3_item_2}}
+        <div class="toc-item"><div class="highlight">{{slot:group_3_item_2}}</div></div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</section>
