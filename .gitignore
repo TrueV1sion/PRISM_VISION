@@ -53,3 +53,17 @@ prisma/dev.db-journal
 
 # worktrees
 .claude/worktrees/
+
+# build artifact copies
+/.next-mac/
+/.next-old/
+
+# playwright caches
+/.playwright-cli/
+/.playwright-mcp/
+
+# generated output
+/output/
+
+# Scientific skills repo (cloned reference, not committed)
+references/scientific-skills/
